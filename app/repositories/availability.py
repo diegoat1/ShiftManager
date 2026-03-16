@@ -23,7 +23,7 @@ class AvailabilityRepository(BaseRepository[DoctorAvailability]):
                 DoctorUnavailability.is_approved == True,
             )
         )
-        if unav.scalar_one_or_none():
+        if unav.scalars().first():
             return False
 
         # Check positive availability exists covering the time
@@ -35,7 +35,7 @@ class AvailabilityRepository(BaseRepository[DoctorAvailability]):
                 DoctorAvailability.end_time >= end,
             )
         )
-        return avail.scalar_one_or_none() is not None
+        return avail.scalars().first() is not None
 
     async def get_availability_with_type(
         self, doctor_id: uuid.UUID, target_date: date, start: time, end: time
@@ -48,7 +48,7 @@ class AvailabilityRepository(BaseRepository[DoctorAvailability]):
                 DoctorAvailability.end_time >= end,
             )
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_by_doctor_and_date_range(
         self, doctor_id: uuid.UUID, start: date, end: date
