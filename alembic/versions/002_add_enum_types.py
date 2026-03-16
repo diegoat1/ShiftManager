@@ -42,11 +42,23 @@ def upgrade() -> None:
     availabilitytype.create(op.get_bind(), checkfirst=True)
     unavailabilityreason.create(op.get_bind(), checkfirst=True)
 
+    # Drop server defaults before type conversion (can't auto-cast VARCHAR default to ENUM)
+    op.execute("ALTER TABLE shifts ALTER COLUMN status DROP DEFAULT")
+    op.execute("ALTER TABLE shift_assignments ALTER COLUMN status DROP DEFAULT")
+    op.execute("ALTER TABLE doctor_availabilities ALTER COLUMN availability_type DROP DEFAULT")
+    op.execute("ALTER TABLE doctor_unavailabilities ALTER COLUMN reason DROP DEFAULT")
+
     # Convert columns from VARCHAR to native ENUM
     op.execute("ALTER TABLE shifts ALTER COLUMN status TYPE shiftstatus USING status::shiftstatus")
     op.execute("ALTER TABLE shift_assignments ALTER COLUMN status TYPE assignmentstatus USING status::assignmentstatus")
     op.execute("ALTER TABLE doctor_availabilities ALTER COLUMN availability_type TYPE availabilitytype USING availability_type::availabilitytype")
     op.execute("ALTER TABLE doctor_unavailabilities ALTER COLUMN reason TYPE unavailabilityreason USING reason::unavailabilityreason")
+
+    # Re-add defaults with ENUM type
+    op.execute("ALTER TABLE shifts ALTER COLUMN status SET DEFAULT 'draft'")
+    op.execute("ALTER TABLE shift_assignments ALTER COLUMN status SET DEFAULT 'proposed'")
+    op.execute("ALTER TABLE doctor_availabilities ALTER COLUMN availability_type SET DEFAULT 'available'")
+    op.execute("ALTER TABLE doctor_unavailabilities ALTER COLUMN reason SET DEFAULT 'other'")
 
 
 def downgrade() -> None:
