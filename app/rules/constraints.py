@@ -1,0 +1,5 @@
+from app.core.config import settings
+
+MIN_REST_HOURS = settings.MIN_REST_HOURS
+MAX_CONSECUTIVE_DAYS = settings.MAX_CONSECUTIVE_DAYS
+MAX_NIGHT_SHIFTS_PER_MONTH = settings.MAX_NIGHT_SHIFTS_PER_MONTH
