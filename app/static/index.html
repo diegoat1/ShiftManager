@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShiftManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+<div x-data="{ get page() { return $store.app.page }, sidebarOpen: false }">
+
+    <!-- Mobile top bar -->
+    <div class="lg:hidden fixed top-0 left-0 right-0 h-14 bg-slate-800 text-white flex items-center px-4 z-30">
+        <button @click="sidebarOpen = !sidebarOpen" class="p-1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+        <span class="ml-3 text-lg font-semibold">ShiftManager</span>
+    </div>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false"
+         class="lg:hidden fixed inset-0 bg-black/50 z-30" x-transition.opacity></div>
+
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+           class="sidebar fixed left-0 top-0 h-full w-60 z-40 lg:translate-x-0 transition-transform duration-200 flex flex-col">
+        <div class="p-5 border-b border-slate-700">
+            <h1 class="text-xl font-bold text-white">ShiftManager</h1>
+            <p class="text-xs text-slate-400 mt-1">Gestione Turni Medici</p>
+        </div>
+        <nav class="flex-1 p-3 space-y-1">
+            <a href="#/" @click="sidebarOpen = false"
+               :class="page === 'dashboard' ? 'active' : 'hover:bg-slate-700'"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+            <a href="#/medici" @click="sidebarOpen = false"
+               :class="page === 'medici' ? 'active' : 'hover:bg-slate-700'"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Medici
+            </a>
+            <a href="#/strutture" @click="sidebarOpen = false"
+               :class="page === 'strutture' ? 'active' : 'hover:bg-slate-700'"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                Strutture
+            </a>
+            <a href="#/calendario" @click="sidebarOpen = false"
+               :class="page === 'calendario' ? 'active' : 'hover:bg-slate-700'"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Calendario
+            </a>
+        </nav>
+        <div class="p-3 border-t border-slate-700 text-xs text-slate-500">v0.1.0</div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="lg:ml-60 pt-14 lg:pt-0 min-h-screen">
+        <div class="p-4 lg:p-6 max-w-7xl mx-auto">
+
+            <!-- ==================== DASHBOARD ==================== -->
+            <template x-if="page === 'dashboard'">
+                <div x-data="dashboardPage">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Dashboard</h2>
+
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <div x-show="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-sm text-slate-500 mb-1">Medici Attivi</div>
+                            <div class="text-3xl font-bold text-blue-600" x-text="stats.doctors"></div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-sm text-slate-500 mb-1">Istituzioni</div>
+                            <div class="text-3xl font-bold text-teal-600" x-text="stats.institutions"></div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-sm text-slate-500 mb-1">Turni del Mese</div>
+                            <div class="text-3xl font-bold text-slate-800" x-text="stats.shiftsThisMonth"></div>
+                        </div>
+                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                            <div class="text-sm text-slate-500 mb-1">Turni da Assegnare</div>
+                            <div class="text-3xl font-bold text-amber-500" x-text="stats.unassigned"></div>
+                        </div>
+                    </div>
+
+                    <div x-show="!loading" class="flex gap-3">
+                        <a href="#/medici" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Vai a Medici</a>
+                        <a href="#/calendario" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">Vai al Calendario</a>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== MEDICI ==================== -->
+            <template x-if="page === 'medici'">
+                <div x-data="doctorsPage">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Medici</h2>
+                        <input type="text" x-model="search" placeholder="Cerca per nome, codice fiscale..."
+                               class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <div x-show="!loading" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="data-table w-full text-sm">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Nome</th>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Codice Fiscale</th>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Email</th>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Stato</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="doc in filtered" :key="doc.id">
+                                        <tr @click="selectDoctor(doc.id)"
+                                            :class="selectedDoctor?.id === doc.id ? 'active' : ''"
+                                            class="border-b border-slate-100 cursor-pointer">
+                                            <td class="px-4 py-3 font-medium" x-text="doc.last_name + ' ' + doc.first_name"></td>
+                                            <td class="px-4 py-3 text-slate-600 font-mono text-xs" x-text="doc.fiscal_code"></td>
+                                            <td class="px-4 py-3 text-slate-600 hidden sm:table-cell" x-text="doc.email"></td>
+                                            <td class="px-4 py-3">
+                                                <span :class="doc.is_active ? 'badge-green' : 'badge-red'" class="badge"
+                                                      x-text="doc.is_active ? 'Attivo' : 'Inattivo'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="filtered.length === 0">
+                                        <td colspan="4" class="px-4 py-8 text-center text-slate-400">Nessun medico trovato</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+                            <span class="text-sm text-slate-600">
+                                Pagina <span x-text="currentPage"></span> di <span x-text="totalPages"></span>
+                                (<span x-text="total"></span> totali)
+                            </span>
+                            <div class="flex gap-2">
+                                <button @click="prevPage()" :disabled="skip === 0"
+                                        class="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-slate-100">Prec</button>
+                                <button @click="nextPage()" :disabled="skip + limit >= total"
+                                        class="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-slate-100">Succ</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Doctor detail panel -->
+                    <template x-if="selectedDoctor">
+                        <div class="mt-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-slate-800"
+                                    x-text="selectedDoctor.first_name + ' ' + selectedDoctor.last_name"></h3>
+                                <button @click="closeDetail()" class="text-slate-400 hover:text-slate-600">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+
+                            <div x-show="detailLoading" class="flex justify-center py-6"><div class="spinner"></div></div>
+
+                            <div x-show="!detailLoading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Info -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-slate-500 mb-2">Informazioni</h4>
+                                    <dl class="space-y-1.5 text-sm">
+                                        <div class="flex justify-between"><dt class="text-slate-500">CF:</dt><dd class="font-mono" x-text="selectedDoctor.fiscal_code"></dd></div>
+                                        <div class="flex justify-between"><dt class="text-slate-500">Email:</dt><dd x-text="selectedDoctor.email"></dd></div>
+                                        <div class="flex justify-between"><dt class="text-slate-500">Telefono:</dt><dd x-text="selectedDoctor.phone || 'N/D'"></dd></div>
+                                        <div class="flex justify-between"><dt class="text-slate-500">Esperienza:</dt><dd x-text="selectedDoctor.years_experience + ' anni'"></dd></div>
+                                        <div class="flex justify-between"><dt class="text-slate-500">Max turni/mese:</dt><dd x-text="selectedDoctor.max_shifts_per_month"></dd></div>
+                                        <div class="flex justify-between"><dt class="text-slate-500">Lavoro autonomo:</dt><dd x-text="selectedDoctor.can_work_alone ? 'Si' : 'No'"></dd></div>
+                                        <div class="flex justify-between"><dt class="text-slate-500">Mezzo emergenza:</dt><dd x-text="selectedDoctor.can_emergency_vehicle ? 'Si' : 'No'"></dd></div>
+                                    </dl>
+                                </div>
+                                <!-- Certifications -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-slate-500 mb-2">Certificazioni</h4>
+                                    <template x-if="selectedDoctor.certifications?.length > 0">
+                                        <ul class="space-y-1.5">
+                                            <template x-for="cert in selectedDoctor.certifications" :key="cert.id">
+                                                <li class="text-sm">
+                                                    <span :class="cert.is_active ? 'badge-green' : 'badge-red'" class="badge"
+                                                          x-text="cert.certification_type?.name || ('Tipo #' + cert.certification_type_id)"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </template>
+                                    <template x-if="!selectedDoctor.certifications?.length">
+                                        <p class="text-sm text-slate-400">Nessuna certificazione</p>
+                                    </template>
+                                </div>
+                                <!-- Languages & Preferences -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-slate-500 mb-2">Lingue</h4>
+                                    <template x-if="selectedDoctor.languages?.length > 0">
+                                        <ul class="space-y-1.5 mb-4">
+                                            <template x-for="lang in selectedDoctor.languages" :key="lang.id">
+                                                <li class="text-sm">
+                                                    <span class="badge badge-blue"
+                                                          x-text="(lang.language?.name || lang.language_id) + ' (Liv. ' + lang.proficiency_level + ')'"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </template>
+                                    <template x-if="!selectedDoctor.languages?.length">
+                                        <p class="text-sm text-slate-400 mb-4">Nessuna lingua</p>
+                                    </template>
+                                    <template x-if="selectedDoctor.preferences">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-slate-500 mb-2">Preferenze</h4>
+                                            <div class="flex flex-wrap gap-1">
+                                                <span x-show="selectedDoctor.preferences.prefers_day" class="badge badge-yellow">Giorno</span>
+                                                <span x-show="selectedDoctor.preferences.prefers_night" class="badge badge-purple">Notte</span>
+                                                <span x-show="selectedDoctor.preferences.prefers_weekends" class="badge badge-blue">Weekend</span>
+                                                <span x-show="selectedDoctor.preferences.avoids_weekends" class="badge badge-gray">No Weekend</span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- ==================== STRUTTURE ==================== -->
+            <template x-if="page === 'strutture'">
+                <div x-data="institutionsPage">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Strutture</h2>
+
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <div x-show="!loading" class="space-y-4">
+                        <template x-for="inst in institutions" :key="inst.id">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <!-- Header -->
+                                <div @click="toggle(inst.id)"
+                                     class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors">
+                                    <div>
+                                        <h3 class="font-semibold text-slate-800" x-text="inst.name"></h3>
+                                        <div class="flex items-center gap-3 mt-1 text-sm text-slate-500">
+                                            <span class="badge badge-blue" x-text="typeLabel(inst.institution_type)"></span>
+                                            <span x-show="inst.city" x-text="inst.city + (inst.province ? ' (' + inst.province + ')' : '')"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-sm text-slate-400" x-text="(inst.sites?.length || 0) + ' sedi'"></span>
+                                        <svg :class="isExpanded(inst.id) ? 'rotate-180' : ''"
+                                             class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <!-- Sites -->
+                                <div x-show="isExpanded(inst.id)" x-transition class="border-t border-slate-200">
+                                    <template x-if="inst.sites?.length > 0">
+                                        <div class="divide-y divide-slate-100">
+                                            <template x-for="site in inst.sites" :key="site.id">
+                                                <div class="p-4 pl-8">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <h4 class="font-medium text-slate-700" x-text="site.name"></h4>
+                                                        <span :class="site.is_active ? 'badge-green' : 'badge-red'" class="badge"
+                                                              x-text="site.is_active ? 'Attiva' : 'Inattiva'"></span>
+                                                    </div>
+                                                    <p x-show="site.city" class="text-sm text-slate-500 mb-2"
+                                                       x-text="(site.address ? site.address + ', ' : '') + site.city + (site.province ? ' (' + site.province + ')' : '')"></p>
+                                                    <!-- Amenities -->
+                                                    <div class="flex flex-wrap gap-2 mb-2">
+                                                        <span :class="site.lodging_available ? 'active' : ''" class="amenity">Alloggio: <span x-text="site.lodging_available ? 'Si' : 'No'"></span></span>
+                                                        <span :class="site.meal_support ? 'active' : ''" class="amenity">Pasti: <span x-text="site.meal_support ? 'Si' : 'No'"></span></span>
+                                                        <span :class="site.parking_available ? 'active' : ''" class="amenity">Parcheggio: <span x-text="site.parking_available ? 'Si' : 'No'"></span></span>
+                                                    </div>
+                                                    <!-- Requirements -->
+                                                    <div class="flex flex-wrap gap-2 text-xs">
+                                                        <span x-show="site.requires_independent_work" class="badge badge-yellow">Lavoro autonomo</span>
+                                                        <span x-show="site.requires_emergency_vehicle" class="badge badge-red">Mezzo emergenza</span>
+                                                        <span x-show="site.min_years_experience > 0" class="badge badge-gray"
+                                                              x-text="'Min. ' + site.min_years_experience + ' anni esp.'"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="!inst.sites?.length">
+                                        <p class="p-4 pl-8 text-sm text-slate-400">Nessuna sede registrata</p>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="institutions.length === 0" class="text-center py-12 text-slate-400">Nessuna istituzione trovata</div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== CALENDARIO ==================== -->
+            <template x-if="page === 'calendario'">
+                <div x-data="calendarPage">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Calendario Turni</h2>
+                        <select x-model="selectedSite" @change="onSiteChange()"
+                                class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Seleziona una sede...</option>
+                            <template x-for="inst in institutions" :key="inst.id">
+                                <optgroup :label="inst.name">
+                                    <template x-for="site in (inst.sites || [])" :key="site.id">
+                                        <option :value="site.id" x-text="site.name + (site.city ? ' - ' + site.city : '')"></option>
+                                    </template>
+                                </optgroup>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="flex flex-wrap gap-3 mb-4 text-xs">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-600 inline-block"></span> Filled</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-500 inline-block"></span> Partial</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> Open</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-gray-400 inline-block"></span> Draft</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-600 inline-block"></span> Cancelled</span>
+                    </div>
+
+                    <!-- Calendar -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                        <div x-show="!selectedSite" class="text-center py-16 text-slate-400">
+                            Seleziona una sede per visualizzare i turni
+                        </div>
+                        <div id="fullcalendar" x-show="selectedSite"></div>
+                    </div>
+
+                    <!-- Assignment Modal -->
+                    <template x-if="modalOpen">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeModal()">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" @click.stop>
+                                <!-- Modal header -->
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+                                    <h3 class="text-lg font-semibold text-slate-800">Dettaglio Turno</h3>
+                                    <button @click="closeModal()" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+
+                                <div x-show="modalLoading" class="flex justify-center py-8"><div class="spinner"></div></div>
+
+                                <div x-show="!modalLoading && modalShift" class="p-5 space-y-5">
+                                    <!-- Shift info grid -->
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div><span class="text-slate-500">Data:</span> <span class="ml-1 font-medium" x-text="modalShift?.date"></span></div>
+                                        <div><span class="text-slate-500">Tipo:</span> <span class="ml-1" x-text="modalShift?.shift_type || 'Standard'"></span></div>
+                                        <div><span class="text-slate-500">Inizio:</span> <span class="ml-1" x-text="fmtDt(modalShift?.start_datetime)"></span></div>
+                                        <div><span class="text-slate-500">Fine:</span> <span class="ml-1" x-text="fmtDt(modalShift?.end_datetime)"></span></div>
+                                        <div><span class="text-slate-500">Paga:</span> <span class="ml-1 font-medium" x-text="fmtPay(modalShift?.base_pay)"></span></div>
+                                        <div><span class="text-slate-500">Medici:</span> <span class="ml-1" x-text="modalShift?.required_doctors"></span></div>
+                                        <div>
+                                            <span class="text-slate-500">Stato:</span>
+                                            <span class="ml-1 badge"
+                                                  :class="{'badge-green': modalShift?.status==='FILLED', 'badge-yellow': modalShift?.status==='PARTIALLY_FILLED', 'badge-blue': modalShift?.status==='OPEN', 'badge-gray': modalShift?.status==='DRAFT'}"
+                                                  x-text="modalShift?.status"></span>
+                                        </div>
+                                        <div x-show="modalShift?.is_night"><span class="badge badge-purple">Notturno</span></div>
+                                    </div>
+
+                                    <!-- Current assignments -->
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-slate-700 mb-2">
+                                            Assegnazioni
+                                            <span class="text-slate-400 font-normal" x-text="'(' + modalAssignments.length + '/' + modalShift?.required_doctors + ')'"></span>
+                                        </h4>
+                                        <template x-if="modalAssignments.length > 0">
+                                            <div class="space-y-2">
+                                                <template x-for="a in modalAssignments" :key="a.id">
+                                                    <div class="flex items-center justify-between bg-green-50 p-2.5 rounded-lg text-sm">
+                                                        <span class="font-mono text-xs" x-text="a.doctor_id.substring(0,8) + '...'"></span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="badge badge-green" x-text="a.status"></span>
+                                                            <button @click="removeAssignment(a.id)"
+                                                                    class="text-red-500 hover:text-red-700 text-xs font-medium">Rimuovi</button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="modalAssignments.length === 0">
+                                            <p class="text-sm text-slate-400">Nessuna assegnazione</p>
+                                        </template>
+                                    </div>
+
+                                    <!-- Eligible doctors -->
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-slate-700 mb-2">Medici Eleggibili</h4>
+                                        <template x-if="modalEligible.length > 0">
+                                            <div class="space-y-2 max-h-48 overflow-y-auto">
+                                                <template x-for="doc in modalEligible" :key="doc.doctor_id">
+                                                    <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-lg text-sm">
+                                                        <div>
+                                                            <span class="font-medium" x-text="doc.last_name + ' ' + doc.first_name"></span>
+                                                            <template x-if="doc.eligibility.warnings?.length > 0">
+                                                                <div class="text-xs text-amber-600 mt-0.5">
+                                                                    <template x-for="w in doc.eligibility.warnings">
+                                                                        <span x-text="w" class="block"></span>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                        <button @click="assignDoctor(doc.doctor_id)" :disabled="assigning"
+                                                                class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                                                            Assegna
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="modalEligible.length === 0">
+                                            <p class="text-sm text-slate-400">Nessun medico eleggibile</p>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+        </div>
+    </main>
+</div>
+
+<!-- Scripts -->
+<script src="/static/js/api.js"></script>
+<script src="/static/js/app.js"></script>
+<script src="/static/js/pages/dashboard.js"></script>
+<script src="/static/js/pages/doctors.js"></script>
+<script src="/static/js/pages/institutions.js"></script>
+<script src="/static/js/pages/calendar.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+</body>
+</html>
