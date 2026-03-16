@@ -8,7 +8,7 @@ import random
 import uuid
 from datetime import date, datetime, time, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.database import async_session_factory
 from app.models.availability import DoctorAvailability
@@ -482,6 +482,12 @@ async def main():
     await seed()
 
     async with async_session_factory() as session:
+        # Skip if demo data already exists
+        count = await session.scalar(select(func.count()).select_from(Doctor))
+        if count and count > 0:
+            print(f"Demo data already exists ({count} doctors). Skipping.")
+            return
+
         # Load reference data
         cert_result = await session.execute(select(CertificationType))
         cert_map = {ct.name: ct for ct in cert_result.scalars().all()}
