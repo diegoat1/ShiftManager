@@ -607,32 +607,88 @@
                                         </template>
                                     </div>
 
-                                    <!-- Eligible doctors -->
+                                    <!-- Eligible doctors (scored) -->
                                     <div>
                                         <h4 class="text-sm font-semibold text-slate-700 mb-2">Medici Eleggibili</h4>
-                                        <template x-if="modalEligible.length > 0">
-                                            <div class="space-y-2 max-h-48 overflow-y-auto">
-                                                <template x-for="doc in modalEligible" :key="doc.doctor_id">
-                                                    <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-lg text-sm">
-                                                        <div>
-                                                            <span class="font-medium" x-text="doc.last_name + ' ' + doc.first_name"></span>
-                                                            <template x-if="doc.eligibility.warnings?.length > 0">
-                                                                <div class="text-xs text-amber-600 mt-0.5">
-                                                                    <template x-for="w in doc.eligibility.warnings">
-                                                                        <span x-text="w" class="block"></span>
-                                                                    </template>
+                                        <template x-if="modalEligible.filter(d => d.eligibility.is_eligible).length > 0">
+                                            <div class="space-y-2.5 max-h-64 overflow-y-auto">
+                                                <template x-for="doc in modalEligible.filter(d => d.eligibility.is_eligible)" :key="doc.doctor_id">
+                                                    <div class="bg-slate-50 p-3 rounded-lg text-sm border border-slate-100">
+                                                        <!-- Row 1: Rank + Name + Score + Assign -->
+                                                        <div class="flex items-center justify-between mb-1.5">
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white"
+                                                                      :class="doc.rank <= 3 ? 'bg-blue-600' : 'bg-slate-400'"
+                                                                      x-text="'#' + doc.rank"></span>
+                                                                <span class="font-semibold text-slate-800" x-text="doc.last_name + ' ' + doc.first_name"></span>
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <!-- Score bar -->
+                                                                <div class="relative group cursor-help">
+                                                                    <div class="flex items-center gap-1.5">
+                                                                        <div class="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                                            <div class="h-full rounded-full transition-all"
+                                                                                 :class="doc.score >= 75 ? 'bg-emerald-500' : doc.score >= 50 ? 'bg-yellow-500' : doc.score >= 25 ? 'bg-orange-500' : 'bg-red-500'"
+                                                                                 :style="'width:' + doc.score + '%'"></div>
+                                                                        </div>
+                                                                        <span class="text-xs font-bold tabular-nums"
+                                                                              :class="doc.score >= 75 ? 'text-emerald-600' : doc.score >= 50 ? 'text-yellow-600' : doc.score >= 25 ? 'text-orange-600' : 'text-red-600'"
+                                                                              x-text="doc.score"></span>
+                                                                    </div>
+                                                                    <!-- Breakdown tooltip -->
+                                                                    <div x-show="doc.breakdown" class="hidden group-hover:block absolute right-0 top-6 z-50 bg-slate-800 text-white text-xs rounded-lg p-3 w-52 shadow-xl">
+                                                                        <div class="font-semibold mb-1.5 text-slate-200">Punteggio</div>
+                                                                        <div class="space-y-1">
+                                                                            <div class="flex justify-between"><span>Disponibilita</span><span class="font-mono" x-text="doc.breakdown?.availability + '/25'"></span></div>
+                                                                            <div class="flex justify-between"><span>Preferenza turno</span><span class="font-mono" x-text="doc.breakdown?.shift_preference + '/15'"></span></div>
+                                                                            <div class="flex justify-between"><span>Affinita sede</span><span class="font-mono" x-text="doc.breakdown?.site_affinity + '/20'"></span></div>
+                                                                            <div class="flex justify-between"><span>Carico lavoro</span><span class="font-mono" x-text="doc.breakdown?.workload_balance + '/15'"></span></div>
+                                                                            <div class="flex justify-between"><span>Distanza</span><span class="font-mono" x-text="doc.breakdown?.distance + '/15'"></span></div>
+                                                                            <div class="flex justify-between"><span>Qualifiche extra</span><span class="font-mono" x-text="doc.breakdown?.extra_qualifications + '/10'"></span></div>
+                                                                            <div class="border-t border-slate-600 mt-1.5 pt-1.5 flex justify-between font-bold"><span>Totale</span><span class="font-mono" x-text="doc.score + '/100'"></span></div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
+                                                                <button @click="assignDoctor(doc.doctor_id)" :disabled="assigning"
+                                                                        class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                                                                    Assegna
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Row 2: Competency tags -->
+                                                        <div class="flex flex-wrap gap-1 mb-1">
+                                                            <template x-for="cert in doc.certifications" :key="cert">
+                                                                <span class="inline-block px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium" x-text="cert"></span>
+                                                            </template>
+                                                            <template x-for="lang in doc.languages" :key="lang">
+                                                                <span class="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-medium" x-text="lang"></span>
+                                                            </template>
+                                                            <template x-if="doc.can_work_alone">
+                                                                <span class="inline-block px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">Autonomo</span>
+                                                            </template>
+                                                            <template x-if="doc.can_emergency_vehicle">
+                                                                <span class="inline-block px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-medium">Emergenza</span>
+                                                            </template>
+                                                            <template x-if="doc.years_experience > 0">
+                                                                <span class="inline-block px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded text-[10px] font-medium" x-text="doc.years_experience + ' anni'"></span>
+                                                            </template>
+                                                            <template x-if="doc.distance_km !== null">
+                                                                <span class="inline-block px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded text-[10px] font-medium" x-text="doc.distance_km + ' km'"></span>
                                                             </template>
                                                         </div>
-                                                        <button @click="assignDoctor(doc.doctor_id)" :disabled="assigning"
-                                                                class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
-                                                            Assegna
-                                                        </button>
+                                                        <!-- Row 3: Warnings -->
+                                                        <template x-if="doc.eligibility.warnings?.length > 0">
+                                                            <div class="text-xs text-amber-600 mt-1">
+                                                                <template x-for="w in doc.eligibility.warnings">
+                                                                    <span x-text="w" class="block"></span>
+                                                                </template>
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 </template>
                                             </div>
                                         </template>
-                                        <template x-if="modalEligible.length === 0">
+                                        <template x-if="modalEligible.filter(d => d.eligibility.is_eligible).length === 0">
                                             <p class="text-sm text-slate-400">Nessun medico eleggibile</p>
                                         </template>
                                     </div>

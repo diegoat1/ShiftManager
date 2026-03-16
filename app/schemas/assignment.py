@@ -33,3 +33,28 @@ class EligibleDoctorRead(BaseModel):
     first_name: str
     last_name: str
     eligibility: EligibilityResult
+
+
+class ScoreBreakdownRead(BaseModel):
+    availability: int
+    shift_preference: int
+    site_affinity: int
+    workload_balance: int
+    distance: int
+    extra_qualifications: int
+
+
+class ScoredEligibleDoctorRead(BaseModel):
+    doctor_id: uuid.UUID
+    first_name: str
+    last_name: str
+    eligibility: EligibilityResult
+    score: int = 0
+    rank: int = 0
+    breakdown: ScoreBreakdownRead | None = None
+    distance_km: float | None = None
+    certifications: list[str] = []
+    languages: list[str] = []
+    years_experience: int = 0
+    can_work_alone: bool = False
+    can_emergency_vehicle: bool = False

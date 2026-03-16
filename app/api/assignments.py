@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_assignment_service
-from app.schemas.assignment import AssignmentCreate, AssignmentRead, EligibilityResult, EligibleDoctorRead
+from app.schemas.assignment import AssignmentCreate, AssignmentRead, EligibilityResult, ScoredEligibleDoctorRead
 from app.services.assignment import AssignmentService
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
@@ -31,7 +31,7 @@ async def check_eligibility(doctor_id: uuid.UUID, shift_id: uuid.UUID, svc: Assi
     return await svc.check_eligibility(doctor_id, shift_id)
 
 
-@router.get("/eligible/{shift_id}", response_model=list[EligibleDoctorRead])
+@router.get("/eligible/{shift_id}", response_model=list[ScoredEligibleDoctorRead])
 async def get_eligible_doctors(shift_id: uuid.UUID, svc: AssignSvc):
     return await svc.get_eligible_doctors(shift_id)
 

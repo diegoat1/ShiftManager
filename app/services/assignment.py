@@ -7,6 +7,7 @@ from app.repositories.assignment import AssignmentRepository
 from app.repositories.doctor import DoctorRepository
 from app.repositories.shift import ShiftRepository
 from app.rules.eligibility import EligibilityEngine
+from app.rules.scoring import MatchScorer
 from app.schemas.assignment import AssignmentCreate, EligibilityResult
 from app.utils.enums import AssignmentStatus, ShiftStatus
 
@@ -18,6 +19,7 @@ class AssignmentService:
         self.shift_repo = ShiftRepository(session)
         self.doctor_repo = DoctorRepository(session)
         self.engine = EligibilityEngine(session)
+        self.scorer = MatchScorer(session)
 
     async def assign(self, data: AssignmentCreate) -> tuple[ShiftAssignment | None, EligibilityResult]:
         # Check eligibility first
@@ -78,18 +80,60 @@ class AssignmentService:
 
     async def get_eligible_doctors(self, shift_id: uuid.UUID) -> list[dict]:
         doctors = await self.doctor_repo.get_all(limit=1000, is_active=True)
-        eligible = []
+        shift = await self.shift_repo.get_with_requirements(shift_id)
+
+        eligible_ids = []
+        all_results = []
         for doctor in doctors:
             is_eligible, reasons, warnings = await self.engine.check(doctor.id, shift_id)
-            eligible.append({
-                "doctor_id": doctor.id,
-                "first_name": doctor.first_name,
-                "last_name": doctor.last_name,
+            all_results.append({
+                "doctor": doctor,
+                "is_eligible": is_eligible,
                 "eligibility": EligibilityResult(
                     is_eligible=is_eligible, reasons=reasons, warnings=warnings
                 ),
             })
-        return eligible
+            if is_eligible:
+                eligible_ids.append(doctor.id)
+
+        # Score eligible doctors
+        scored_map: dict = {}
+        if shift and eligible_ids:
+            scored_list = await self.scorer.score_many(eligible_ids, shift)
+            scored_map = {s.doctor_id: s for s in scored_list}
+
+        # Build response: eligible first (sorted by score desc), then ineligible
+        eligible_out = []
+        ineligible_out = []
+        for item in all_results:
+            doctor = item["doctor"]
+            scored = scored_map.get(doctor.id)
+            entry = {
+                "doctor_id": doctor.id,
+                "first_name": doctor.first_name,
+                "last_name": doctor.last_name,
+                "eligibility": item["eligibility"],
+                "score": scored.score if scored else 0,
+                "rank": 0,
+                "breakdown": scored.breakdown.to_dict() if scored else None,
+                "distance_km": scored.distance_km if scored else None,
+                "certifications": scored.certifications if scored else [],
+                "languages": scored.languages if scored else [],
+                "years_experience": scored.years_experience if scored else 0,
+                "can_work_alone": scored.can_work_alone if scored else False,
+                "can_emergency_vehicle": scored.can_emergency_vehicle if scored else False,
+            }
+            if item["is_eligible"]:
+                eligible_out.append(entry)
+            else:
+                ineligible_out.append(entry)
+
+        # Sort eligible by score desc, assign ranks
+        eligible_out.sort(key=lambda x: x["score"], reverse=True)
+        for i, entry in enumerate(eligible_out):
+            entry["rank"] = i + 1
+
+        return eligible_out + ineligible_out
 
     async def get_by_shift(self, shift_id: uuid.UUID):
         return await self.repo.get_by_shift(shift_id)

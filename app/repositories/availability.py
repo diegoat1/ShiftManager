@@ -37,6 +37,19 @@ class AvailabilityRepository(BaseRepository[DoctorAvailability]):
         )
         return avail.scalar_one_or_none() is not None
 
+    async def get_availability_with_type(
+        self, doctor_id: uuid.UUID, target_date: date, start: time, end: time
+    ) -> DoctorAvailability | None:
+        result = await self.session.execute(
+            select(DoctorAvailability).where(
+                DoctorAvailability.doctor_id == doctor_id,
+                DoctorAvailability.date == target_date,
+                DoctorAvailability.start_time <= start,
+                DoctorAvailability.end_time >= end,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_doctor_and_date_range(
         self, doctor_id: uuid.UUID, start: date, end: date
     ) -> Sequence[DoctorAvailability]:
