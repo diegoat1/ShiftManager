@@ -364,7 +364,7 @@
                                         <div>
                                             <span class="text-slate-500">Stato:</span>
                                             <span class="ml-1 badge"
-                                                  :class="{'badge-green': modalShift?.status==='FILLED', 'badge-yellow': modalShift?.status==='PARTIALLY_FILLED', 'badge-blue': modalShift?.status==='OPEN', 'badge-gray': modalShift?.status==='DRAFT'}"
+                                                  :class="{'badge-green': modalShift?.status==='filled', 'badge-yellow': modalShift?.status==='partially_filled', 'badge-blue': modalShift?.status==='open', 'badge-gray': modalShift?.status==='draft'}"
                                                   x-text="modalShift?.status"></span>
                                         </div>
                                         <div x-show="modalShift?.is_night"><span class="badge badge-purple">Notturno</span></div>

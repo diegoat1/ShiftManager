@@ -1,13 +1,13 @@
 document.addEventListener('alpine:init', () => {
 
     const STATUS_COLORS = {
-        'FILLED': '#16A34A',
-        'PARTIALLY_FILLED': '#EAB308',
-        'OPEN': '#2563EB',
-        'DRAFT': '#9CA3AF',
-        'IN_PROGRESS': '#8B5CF6',
-        'COMPLETED': '#059669',
-        'CANCELLED': '#DC2626',
+        'filled': '#16A34A',
+        'partially_filled': '#EAB308',
+        'open': '#2563EB',
+        'draft': '#9CA3AF',
+        'in_progress': '#8B5CF6',
+        'completed': '#059669',
+        'cancelled': '#DC2626',
     };
 
     Alpine.data('calendarPage', () => ({

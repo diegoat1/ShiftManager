@@ -1,12 +1,19 @@
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import Enum as SAEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TimestampMixin
 from app.models.requirement import CodeLevel  # noqa: F401 — needed for FK resolution
 from app.utils.enums import ShiftStatus
+
+_shift_status_enum = SAEnum(
+    ShiftStatus,
+    values_callable=lambda e: [m.value for m in e],
+    name="shiftstatus",
+    create_type=False,
+)
 
 
 class ShiftTemplate(TimestampMixin, Base):
@@ -34,7 +41,7 @@ class Shift(TimestampMixin, Base):
     start_datetime: Mapped[datetime]
     end_datetime: Mapped[datetime]
     required_doctors: Mapped[int] = mapped_column(default=1)
-    status: Mapped[ShiftStatus] = mapped_column(default=ShiftStatus.DRAFT)
+    status: Mapped[ShiftStatus] = mapped_column(_shift_status_enum, default=ShiftStatus.DRAFT)
     base_pay: Mapped[float] = mapped_column(default=0.0)
     urgent_multiplier: Mapped[float] = mapped_column(default=1.0)
     is_night: Mapped[bool] = mapped_column(default=False)

@@ -38,7 +38,7 @@ document.addEventListener('alpine:init', () => {
                 for (const shifts of results) {
                     total += shifts.length;
                     open += shifts.filter(s =>
-                        s.status === 'OPEN' || s.status === 'DRAFT'
+                        s.status === 'open' || s.status === 'draft'
                     ).length;
                 }
                 this.stats.shiftsThisMonth = total;
