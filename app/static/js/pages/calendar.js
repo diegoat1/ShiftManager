@@ -26,7 +26,7 @@ document.addEventListener('alpine:init', () => {
 
         async init() {
             try {
-                const data = await API.get('/institutions', { skip: 0, limit: 200 });
+                const data = await API.get('/institutions/', { skip: 0, limit: 200 });
                 this.institutions = data.items;
             } catch (e) {
                 console.error('Calendar init failed:', e);
@@ -109,7 +109,7 @@ document.addEventListener('alpine:init', () => {
             if (!this.modalShift || this.assigning) return;
             this.assigning = true;
             try {
-                await API.post('/assignments', {
+                await API.post('/assignments/', {
                     shift_id: this.modalShift.id,
                     doctor_id: doctorId,
                     pay_amount: this.modalShift.base_pay * this.modalShift.urgent_multiplier,

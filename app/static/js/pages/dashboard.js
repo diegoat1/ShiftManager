@@ -12,8 +12,8 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             try {
                 const [doctors, instData] = await Promise.all([
-                    API.get('/doctors', { skip: 0, limit: 1 }),
-                    API.get('/institutions', { skip: 0, limit: 200 }),
+                    API.get('/doctors/', { skip: 0, limit: 1 }),
+                    API.get('/institutions/', { skip: 0, limit: 200 }),
                 ]);
                 this.stats.doctors = doctors.total;
                 this.stats.institutions = instData.total;

@@ -36,7 +36,7 @@ document.addEventListener('alpine:init', () => {
         async load() {
             this.loading = true;
             try {
-                const data = await API.get('/doctors', {
+                const data = await API.get('/doctors/', {
                     skip: this.skip, limit: this.limit,
                 });
                 this.doctors = data.items;

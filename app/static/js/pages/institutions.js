@@ -12,7 +12,7 @@ document.addEventListener('alpine:init', () => {
         async load() {
             this.loading = true;
             try {
-                const data = await API.get('/institutions', {
+                const data = await API.get('/institutions/', {
                     skip: 0, limit: 200,
                 });
                 this.institutions = data.items;
