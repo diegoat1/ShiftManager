@@ -14,6 +14,15 @@ class InstitutionRepository(BaseRepository[Institution]):
     def __init__(self, session: AsyncSession):
         super().__init__(Institution, session)
 
+    async def get_all(self, skip: int = 0, limit: int = 50, **filters) -> Sequence[Institution]:
+        stmt = select(Institution).options(selectinload(Institution.sites))
+        for key, value in filters.items():
+            if value is not None:
+                stmt = stmt.where(getattr(Institution, key) == value)
+        stmt = stmt.offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
     async def get_with_sites(self, institution_id: uuid.UUID) -> Institution | None:
         stmt = (
             select(Institution)
