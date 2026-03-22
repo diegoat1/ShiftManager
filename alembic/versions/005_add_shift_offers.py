@@ -18,6 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 offerstatus = sa.Enum(
     "proposed", "viewed", "accepted", "rejected", "expired", "cancelled",
     name="offerstatus",
+    create_type=False,
 )
 
 

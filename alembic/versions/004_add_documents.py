@@ -18,6 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 verificationstatus = sa.Enum(
     "pending", "approved", "rejected", "expired",
     name="verificationstatus",
+    create_type=False,
 )
 
 

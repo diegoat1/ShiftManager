@@ -19,11 +19,13 @@ depends_on: Union[str, Sequence[str], None] = None
 userrole = sa.Enum(
     "superadmin", "admin", "coordinatore", "operatore", "medico",
     name="userrole",
+    create_type=False,
 )
 
 homologationstatus = sa.Enum(
     "pending", "approved", "suspended", "revoked",
     name="homologationstatus",
+    create_type=False,
 )
 
 
