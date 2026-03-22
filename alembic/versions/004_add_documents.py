@@ -9,13 +9,14 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM
 
 revision: str = "004_documents"
 down_revision: str = "003_users_auth"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-verificationstatus = sa.Enum(
+verificationstatus = ENUM(
     "pending", "approved", "rejected", "expired",
     name="verificationstatus",
     create_type=False,
@@ -23,7 +24,13 @@ verificationstatus = sa.Enum(
 
 
 def upgrade() -> None:
-    verificationstatus.create(op.get_bind(), checkfirst=True)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE verificationstatus AS ENUM ('pending', 'approved', 'rejected', 'expired');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
     op.create_table(
         "document_types",
@@ -79,4 +86,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("documents")
     op.drop_table("document_types")
-    verificationstatus.drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS verificationstatus")

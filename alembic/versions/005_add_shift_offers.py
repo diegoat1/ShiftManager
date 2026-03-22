@@ -9,13 +9,14 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM
 
 revision: str = "005_offers"
 down_revision: str = "004_documents"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-offerstatus = sa.Enum(
+offerstatus = ENUM(
     "proposed", "viewed", "accepted", "rejected", "expired", "cancelled",
     name="offerstatus",
     create_type=False,
@@ -23,7 +24,13 @@ offerstatus = sa.Enum(
 
 
 def upgrade() -> None:
-    offerstatus.create(op.get_bind(), checkfirst=True)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE offerstatus AS ENUM ('proposed', 'viewed', 'accepted', 'rejected', 'expired', 'cancelled');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
     # Extend shiftstatus enum with new values
     op.execute("ALTER TYPE shiftstatus ADD VALUE IF NOT EXISTS 'proposing'")
@@ -77,4 +84,4 @@ def downgrade() -> None:
     op.drop_index("ix_notifications_user_status")
     op.drop_table("notifications")
     op.drop_table("shift_offers")
-    offerstatus.drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS offerstatus")

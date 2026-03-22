@@ -9,20 +9,21 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import ENUM
 
 revision: str = "003_users_auth"
 down_revision: str = "002_enums"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-userrole = sa.Enum(
+# Use postgresql.ENUM with create_type=False to prevent auto-creation
+userrole = ENUM(
     "superadmin", "admin", "coordinatore", "operatore", "medico",
     name="userrole",
     create_type=False,
 )
 
-homologationstatus = sa.Enum(
+homologationstatus = ENUM(
     "pending", "approved", "suspended", "revoked",
     name="homologationstatus",
     create_type=False,
@@ -30,9 +31,22 @@ homologationstatus = sa.Enum(
 
 
 def upgrade() -> None:
-    # Create enum types
-    userrole.create(op.get_bind(), checkfirst=True)
-    homologationstatus.create(op.get_bind(), checkfirst=True)
+    # Create enum types using raw SQL with error handling for idempotency
+    # (previous failed migrations may have left orphan enum types)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE userrole AS ENUM ('superadmin', 'admin', 'coordinatore', 'operatore', 'medico');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE homologationstatus AS ENUM ('pending', 'approved', 'suspended', 'revoked');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
     # Create users table
     op.create_table(
@@ -81,5 +95,5 @@ def downgrade() -> None:
     op.drop_index("ix_users_email")
     op.drop_table("users")
 
-    homologationstatus.drop(op.get_bind(), checkfirst=True)
-    userrole.drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS homologationstatus")
+    op.execute("DROP TYPE IF EXISTS userrole")
