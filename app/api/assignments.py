@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import get_assignment_service
+from app.api.deps import RequireAdmin, get_assignment_service
 from app.schemas.assignment import AssignmentCreate, AssignmentRead, EligibilityResult, ScoredEligibleDoctorRead
 from app.services.assignment import AssignmentService
 
@@ -13,7 +13,7 @@ AssignSvc = Annotated[AssignmentService, Depends(get_assignment_service)]
 
 
 @router.post("/", response_model=AssignmentRead, status_code=201)
-async def assign_doctor(data: AssignmentCreate, svc: AssignSvc):
+async def assign_doctor(data: AssignmentCreate, svc: AssignSvc, admin: RequireAdmin):
     assignment, result = await svc.assign(data)
     if not assignment:
         raise HTTPException(400, detail={"message": "Not eligible", "eligibility": result.model_dump()})
@@ -21,7 +21,7 @@ async def assign_doctor(data: AssignmentCreate, svc: AssignSvc):
 
 
 @router.delete("/{assignment_id}", status_code=204)
-async def unassign_doctor(assignment_id: uuid.UUID, svc: AssignSvc):
+async def unassign_doctor(assignment_id: uuid.UUID, svc: AssignSvc, admin: RequireAdmin):
     if not await svc.unassign(assignment_id):
         raise HTTPException(404, "Assignment not found")
 

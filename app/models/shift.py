@@ -58,6 +58,7 @@ class Shift(TimestampMixin, Base):
     requirements: Mapped[list["ShiftRequirement"]] = relationship(back_populates="shift", cascade="all, delete-orphan")
     language_requirements: Mapped[list["ShiftLanguageRequirement"]] = relationship(back_populates="shift", cascade="all, delete-orphan")
     assignments: Mapped[list["ShiftAssignment"]] = relationship(back_populates="shift")
+    offers: Mapped[list["ShiftOffer"]] = relationship(back_populates="shift")
     min_code_level: Mapped["CodeLevel | None"] = relationship(foreign_keys=[min_code_level_id])
 
 

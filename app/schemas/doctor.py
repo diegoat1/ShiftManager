@@ -105,6 +105,31 @@ class DoctorUpdate(BaseModel):
     can_work_alone: bool | None = None
     can_emergency_vehicle: bool | None = None
     years_experience: int | None = None
+    birth_date: date | None = None
+    residence_address: str | None = None
+    domicile_city: str | None = None
+    ordine_province: str | None = None
+    ordine_number: str | None = None
+    has_own_vehicle: bool | None = None
+
+
+class DoctorProfileUpdate(BaseModel):
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+    lat: float | None = None
+    lon: float | None = None
+    max_distance_km: float | None = None
+    willing_to_relocate: bool | None = None
+    willing_overnight_stay: bool | None = None
+    max_shifts_per_month: int | None = None
+    max_night_shifts_per_month: int | None = None
+    birth_date: date | None = None
+    residence_address: str | None = None
+    domicile_city: str | None = None
+    ordine_province: str | None = None
+    ordine_number: str | None = None
+    has_own_vehicle: bool | None = None
 
 
 class DoctorRead(BaseModel):
@@ -126,6 +151,14 @@ class DoctorRead(BaseModel):
     can_work_alone: bool
     can_emergency_vehicle: bool
     years_experience: int
+    birth_date: date | None = None
+    residence_address: str | None = None
+    domicile_city: str | None = None
+    homologation_status: str | None = None
+    ordine_province: str | None = None
+    ordine_number: str | None = None
+    has_own_vehicle: bool = False
+    profile_completion_percent: int = 0
     created_at: datetime
     certifications: list[CertificationRead] = []
     languages: list[DoctorLanguageRead] = []

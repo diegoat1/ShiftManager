@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.deps import get_shift_service
+from app.api.deps import RequireAdmin, get_shift_service
 from app.schemas.common import PaginatedResponse
 from app.schemas.shift import (
     GenerateShiftsRequest,
@@ -24,7 +24,7 @@ ShiftSvc = Annotated[ShiftService, Depends(get_shift_service)]
 
 
 @router.post("/", response_model=ShiftRead, status_code=201)
-async def create_shift(data: ShiftCreate, svc: ShiftSvc):
+async def create_shift(data: ShiftCreate, svc: ShiftSvc, admin: RequireAdmin):
     return await svc.create(data)
 
 
@@ -43,7 +43,7 @@ async def get_shift(shift_id: uuid.UUID, svc: ShiftSvc):
 
 
 @router.patch("/{shift_id}", response_model=ShiftRead)
-async def update_shift(shift_id: uuid.UUID, data: ShiftUpdate, svc: ShiftSvc):
+async def update_shift(shift_id: uuid.UUID, data: ShiftUpdate, svc: ShiftSvc, admin: RequireAdmin):
     shift = await svc.update(shift_id, data)
     if not shift:
         raise HTTPException(404, "Shift not found")
@@ -51,7 +51,7 @@ async def update_shift(shift_id: uuid.UUID, data: ShiftUpdate, svc: ShiftSvc):
 
 
 @router.delete("/{shift_id}", status_code=204)
-async def delete_shift(shift_id: uuid.UUID, svc: ShiftSvc):
+async def delete_shift(shift_id: uuid.UUID, svc: ShiftSvc, admin: RequireAdmin):
     if not await svc.delete(shift_id):
         raise HTTPException(404, "Shift not found")
 
@@ -89,5 +89,5 @@ async def list_templates(site_id: uuid.UUID, svc: ShiftSvc):
 
 
 @router.post("/generate", response_model=list[ShiftRead])
-async def generate_shifts(data: GenerateShiftsRequest, svc: ShiftSvc):
+async def generate_shifts(data: GenerateShiftsRequest, svc: ShiftSvc, admin: RequireAdmin):
     return await svc.generate_shifts(data)

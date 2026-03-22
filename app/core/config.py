@@ -5,11 +5,16 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://shiftmanager:shiftmanager@localhost:5432/shiftmanager"
     SECRET_KEY: str = "change-me-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # Business rules
     MIN_REST_HOURS: int = 11
     MAX_CONSECUTIVE_DAYS: int = 6
     MAX_NIGHT_SHIFTS_PER_MONTH: int = 8
+
+    # File uploads
+    UPLOAD_DIR: str = "uploads"
+    MAX_FILE_SIZE_MB: int = 10
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

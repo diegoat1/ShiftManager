@@ -11,6 +11,44 @@
 <body class="bg-slate-50 min-h-screen">
 <div x-data="{ get page() { return $store.app.page }, sidebarOpen: false }">
 
+    <!-- ==================== LOGIN PAGE ==================== -->
+    <template x-if="page === 'login' || page === 'register'">
+        <div x-data="loginPage()" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 p-4">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl font-bold text-slate-800">ShiftManager</h1>
+                    <p class="text-sm text-slate-500 mt-1" x-text="isRegister ? 'Registrazione Medico' : 'Accesso al Sistema'"></p>
+                </div>
+                <div x-show="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600" x-text="error"></div>
+                <form @submit.prevent="isRegister ? register() : login()" class="space-y-4">
+                    <template x-if="isRegister">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input x-model="firstName" type="text" placeholder="Nome" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input x-model="lastName" type="text" placeholder="Cognome" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <input x-model="fiscalCode" type="text" placeholder="Codice Fiscale" required maxlength="16" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input x-model="phone" type="tel" placeholder="Telefono (opzionale)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </template>
+                    <input x-model="email" type="email" placeholder="Email" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input x-model="password" type="password" placeholder="Password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" :disabled="loading"
+                            class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            x-text="loading ? 'Attendere...' : (isRegister ? 'Registrati' : 'Accedi')"></button>
+                </form>
+                <p class="text-center text-sm text-slate-500 mt-4">
+                    <button @click="toggleMode()" class="text-blue-600 hover:underline"
+                            x-text="isRegister ? 'Hai un account? Accedi' : 'Non hai un account? Registrati'"></button>
+                </p>
+            </div>
+        </div>
+    </template>
+
+    <!-- ==================== MAIN APP (requires auth) ==================== -->
+    <template x-if="page !== 'login' && page !== 'register'">
+        <div>
+
     <!-- Mobile top bar -->
     <div class="lg:hidden fixed top-0 left-0 right-0 h-14 bg-slate-800 text-white flex items-center px-4 z-30">
         <button @click="sidebarOpen = !sidebarOpen" class="p-1">
@@ -19,6 +57,13 @@
             </svg>
         </button>
         <span class="ml-3 text-lg font-semibold">ShiftManager</span>
+        <!-- Notification bell (mobile) -->
+        <div class="ml-auto relative" x-data="notificationsDropdown()">
+            <button @click="toggle()" class="relative p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                <span x-show="$store.app.unreadNotifications > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center" x-text="$store.app.unreadNotifications"></span>
+            </button>
+        </div>
     </div>
 
     <!-- Sidebar overlay (mobile) -->
@@ -39,26 +84,73 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                 Dashboard
             </a>
-            <a href="#/medici" @click="sidebarOpen = false"
-               :class="page === 'medici' ? 'active' : 'hover:bg-slate-700'"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                Medici
-            </a>
-            <a href="#/strutture" @click="sidebarOpen = false"
-               :class="page === 'strutture' ? 'active' : 'hover:bg-slate-700'"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                Strutture
-            </a>
-            <a href="#/calendario" @click="sidebarOpen = false"
-               :class="page === 'calendario' ? 'active' : 'hover:bg-slate-700'"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Calendario
-            </a>
+            <!-- Admin nav -->
+            <template x-if="$store.app.isAdmin()">
+                <div class="space-y-1">
+                    <a href="#/medici" @click="sidebarOpen = false"
+                       :class="page === 'medici' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        Medici
+                    </a>
+                    <a href="#/strutture" @click="sidebarOpen = false"
+                       :class="page === 'strutture' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        Strutture
+                    </a>
+                    <a href="#/calendario" @click="sidebarOpen = false"
+                       :class="page === 'calendario' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Calendario
+                    </a>
+                    <a href="#/admin/documenti" @click="sidebarOpen = false"
+                       :class="page === 'admin-documenti' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Documenti
+                    </a>
+                    <a href="#/analytics" @click="sidebarOpen = false"
+                       :class="page === 'analytics' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        Analytics
+                    </a>
+                </div>
+            </template>
+            <!-- Doctor nav -->
+            <template x-if="$store.app.isMedico()">
+                <div class="space-y-1">
+                    <a href="#/profilo" @click="sidebarOpen = false"
+                       :class="page === 'profilo' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        Profilo
+                    </a>
+                    <a href="#/documenti" @click="sidebarOpen = false"
+                       :class="page === 'documenti' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Documenti
+                    </a>
+                    <a href="#/mie-offerte" @click="sidebarOpen = false"
+                       :class="page === 'mie-offerte' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Offerte
+                    </a>
+                </div>
+            </template>
         </nav>
-        <div class="p-3 border-t border-slate-700 text-xs text-slate-500">v0.1.0</div>
+        <!-- User info + logout -->
+        <div class="p-3 border-t border-slate-700">
+            <div class="flex items-center justify-between">
+                <div class="text-xs text-slate-400 truncate" x-text="$store.app.user?.email || ''"></div>
+                <button @click="$store.app.logout()" class="text-xs text-red-400 hover:text-red-300 ml-2">Esci</button>
+            </div>
+            <div class="text-xs text-slate-500 mt-1">v0.2.0</div>
+        </div>
     </aside>
 
     <!-- Main content -->
@@ -699,13 +791,240 @@
                 </div>
             </template>
 
+            <!-- ==================== PROFILO MEDICO ==================== -->
+            <template x-if="page === 'profilo'">
+                <div x-data="profilePage()">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Il Mio Profilo</h2>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <template x-if="!loading && profile">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div class="mb-4 flex items-center gap-3">
+                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl font-bold"
+                                     x-text="(profile.first_name?.[0] || '') + (profile.last_name?.[0] || '')"></div>
+                                <div>
+                                    <div class="font-semibold text-lg" x-text="profile.first_name + ' ' + profile.last_name"></div>
+                                    <div class="text-sm text-slate-500" x-text="profile.email"></div>
+                                    <div class="mt-1">
+                                        <div class="w-40 bg-slate-200 rounded-full h-2"><div class="bg-blue-600 rounded-full h-2" :style="'width:' + profile.profile_completion_percent + '%'"></div></div>
+                                        <span class="text-xs text-slate-500" x-text="profile.profile_completion_percent + '% completo'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <form @submit.prevent="save()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Nome</label><input x-model="profile.first_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Cognome</label><input x-model="profile.last_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Telefono</label><input x-model="profile.phone" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Data di Nascita</label><input x-model="profile.birth_date" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-600 mb-1">Indirizzo Residenza</label><input x-model="profile.residence_address" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Citta Domicilio</label><input x-model="profile.domicile_city" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Provincia Ordine</label><input x-model="profile.ordine_province" maxlength="2" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Numero Ordine</label><input x-model="profile.ordine_number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Max Distanza (km)</label><input x-model.number="profile.max_distance_km" type="number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                <div class="flex items-center gap-4 md:col-span-2">
+                                    <label class="flex items-center gap-2 text-sm"><input x-model="profile.has_own_vehicle" type="checkbox"> Veicolo proprio</label>
+                                    <label class="flex items-center gap-2 text-sm"><input x-model="profile.willing_to_relocate" type="checkbox"> Disponibile a trasferirsi</label>
+                                    <label class="flex items-center gap-2 text-sm"><input x-model="profile.willing_overnight_stay" type="checkbox"> Disponibile per notti</label>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <button type="submit" :disabled="saving" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="saving ? 'Salvataggio...' : 'Salva Profilo'"></button>
+                                </div>
+                            </form>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- ==================== DOCUMENTI MEDICO ==================== -->
+            <template x-if="page === 'documenti'">
+                <div x-data="documentsPage()">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">I Miei Documenti</h2>
+                        <button @click="showUpload = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">+ Carica</button>
+                    </div>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <!-- Upload form -->
+                    <template x-if="showUpload">
+                        <div class="mb-6 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <h3 class="font-semibold mb-3">Carica Documento</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                <select x-model="uploadTypeId" class="px-3 py-2 border rounded-lg text-sm" required>
+                                    <option value="">Tipo documento...</option>
+                                    <template x-for="t in documentTypes" :key="t.id">
+                                        <option :value="t.id" x-text="t.name"></option>
+                                    </template>
+                                </select>
+                                <input x-model="uploadIssuedAt" type="date" placeholder="Data emissione" class="px-3 py-2 border rounded-lg text-sm">
+                                <input x-model="uploadExpiresAt" type="date" placeholder="Data scadenza" class="px-3 py-2 border rounded-lg text-sm">
+                            </div>
+                            <input type="file" @change="upload($event)" accept=".pdf,.jpg,.jpeg,.png" :disabled="!uploadTypeId || uploading" class="text-sm">
+                            <button @click="showUpload = false" class="ml-3 text-sm text-slate-500 hover:text-slate-700">Annulla</button>
+                        </div>
+                    </template>
+                    <!-- Documents list -->
+                    <div x-show="!loading" class="space-y-3">
+                        <template x-for="doc in documents" :key="doc.id">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-sm" x-text="doc.document_type?.name || 'Documento'"></div>
+                                    <div class="text-xs text-slate-500" x-text="doc.original_filename + ' - ' + (doc.file_size_bytes / 1024).toFixed(0) + 'KB'"></div>
+                                    <div x-show="doc.expires_at" class="text-xs text-slate-400" x-text="'Scade: ' + doc.expires_at"></div>
+                                    <div x-show="doc.rejection_reason" class="text-xs text-red-500 mt-1" x-text="'Motivo: ' + doc.rejection_reason"></div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span :class="statusColor(doc.verification_status)" class="badge" x-text="statusLabel(doc.verification_status)"></span>
+                                    <button x-show="doc.verification_status === 'pending'" @click="deleteDoc(doc.id)" class="text-red-400 hover:text-red-600 text-xs">Elimina</button>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="documents.length === 0" class="text-center py-8 text-slate-400">Nessun documento caricato</div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== OFFERTE MEDICO ==================== -->
+            <template x-if="page === 'mie-offerte'">
+                <div x-data="myOffersPage()">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Le Mie Offerte</h2>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <div x-show="!loading" class="flex gap-2 mb-4">
+                        <button @click="tab = 'pending'" :class="tab === 'pending' ? 'bg-blue-600 text-white' : 'bg-white'" class="px-4 py-2 rounded-lg text-sm font-medium border">Pendenti (<span x-text="pendingOffers.length"></span>)</button>
+                        <button @click="tab = 'all'" :class="tab === 'all' ? 'bg-blue-600 text-white' : 'bg-white'" class="px-4 py-2 rounded-lg text-sm font-medium border">Tutte (<span x-text="offers.length"></span>)</button>
+                    </div>
+                    <div x-show="!loading" class="space-y-3">
+                        <template x-for="offer in (tab === 'pending' ? pendingOffers : offers)" :key="offer.id">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div>
+                                        <span class="font-medium text-sm" x-text="offer.site_name || 'Turno'"></span>
+                                        <span class="text-sm text-slate-500 ml-2" x-text="offer.shift_date"></span>
+                                    </div>
+                                    <span :class="statusColor(offer.status)" class="badge" x-text="statusLabel(offer.status)"></span>
+                                </div>
+                                <div x-show="offer.expires_at && (offer.status === 'proposed' || offer.status === 'viewed')" class="text-xs text-amber-600 mb-2" x-text="'Scade tra: ' + timeLeft(offer.expires_at)"></div>
+                                <div x-show="offer.status === 'proposed' || offer.status === 'viewed'" class="flex gap-2">
+                                    <button @click="accept(offer.id)" class="px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">Accetta</button>
+                                    <button @click="reject(offer.id)" class="px-4 py-1.5 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200">Rifiuta</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== ADMIN DOCUMENTI ==================== -->
+            <template x-if="page === 'admin-documenti'">
+                <div x-data="adminDocumentsPage()">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Gestione Documenti</h2>
+                        <select x-model="filterStatus" @change="loadDocuments()" class="px-3 py-2 border rounded-lg text-sm">
+                            <option value="">Tutti gli stati</option>
+                            <option value="pending">In attesa</option>
+                            <option value="approved">Approvati</option>
+                            <option value="rejected">Rifiutati</option>
+                        </select>
+                    </div>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <div x-show="!loading" class="space-y-3">
+                        <template x-for="doc in documents" :key="doc.id">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium text-sm" x-text="(doc.doctor?.first_name || '') + ' ' + (doc.doctor?.last_name || '') + ' - ' + (doc.document_type?.name || 'Doc')"></div>
+                                    <div class="text-xs text-slate-500" x-text="doc.original_filename"></div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span :class="statusColor(doc.verification_status)" class="badge" x-text="statusLabel(doc.verification_status)"></span>
+                                    <template x-if="doc.verification_status === 'pending'">
+                                        <div class="flex gap-1">
+                                            <button @click="approve(doc.id)" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">Approva</button>
+                                            <button @click="openReject(doc.id)" class="px-3 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200">Rifiuta</button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <!-- Reject modal -->
+                    <template x-if="showRejectModal">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="showRejectModal = false">
+                            <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+                                <h3 class="font-semibold mb-3">Motivo del Rifiuto</h3>
+                                <textarea x-model="rejectReason" rows="3" class="w-full px-3 py-2 border rounded-lg text-sm mb-3" placeholder="Specificare il motivo..."></textarea>
+                                <div class="flex gap-2">
+                                    <button @click="confirmReject()" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Conferma</button>
+                                    <button @click="showRejectModal = false" class="px-4 py-2 bg-slate-100 rounded-lg text-sm">Annulla</button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- ==================== ANALYTICS ==================== -->
+            <template x-if="page === 'analytics'">
+                <div x-data="analyticsPage()">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Analytics</h2>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <template x-if="!loading && kpis">
+                        <div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                <div class="bg-white rounded-xl p-5 shadow-sm border"><div class="text-sm text-slate-500 mb-1">Copertura Turni</div><div class="text-3xl font-bold text-green-600" x-text="kpis.coverage_percent + '%'"></div></div>
+                                <div class="bg-white rounded-xl p-5 shadow-sm border"><div class="text-sm text-slate-500 mb-1">Offerte Inviate</div><div class="text-3xl font-bold text-blue-600" x-text="kpis.total_offers_sent"></div></div>
+                                <div class="bg-white rounded-xl p-5 shadow-sm border"><div class="text-sm text-slate-500 mb-1">Tasso Accettazione</div><div class="text-3xl font-bold text-teal-600" x-text="kpis.acceptance_rate + '%'"></div></div>
+                                <div class="bg-white rounded-xl p-5 shadow-sm border"><div class="text-sm text-slate-500 mb-1">Medici Attivi</div><div class="text-3xl font-bold text-slate-800" x-text="kpis.active_doctors"></div></div>
+                            </div>
+                            <div class="flex gap-3 mb-6">
+                                <button @click="recalculate()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Ricalcola Reliability</button>
+                            </div>
+                            <!-- Monthly table -->
+                            <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+                                <table class="data-table w-full text-sm">
+                                    <thead class="bg-slate-50 border-b"><tr>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Mese</th>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Turni</th>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Coperti</th>
+                                        <th class="text-left px-4 py-3 font-medium text-slate-600">Copertura %</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <template x-for="m in monthlyKpis" :key="m.month">
+                                            <tr class="border-b border-slate-100">
+                                                <td class="px-4 py-3" x-text="m.month"></td>
+                                                <td class="px-4 py-3" x-text="m.total_shifts"></td>
+                                                <td class="px-4 py-3" x-text="m.covered_shifts"></td>
+                                                <td class="px-4 py-3" x-text="m.coverage_percent + '%'"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
         </div>
     </main>
+
+        </div>
+    </template>
 </div>
 
 <!-- Scripts -->
+<script src="/static/js/auth.js"></script>
 <script src="/static/js/api.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/pages/login.js"></script>
+<script src="/static/js/pages/profile.js"></script>
+<script src="/static/js/pages/documents.js"></script>
+<script src="/static/js/pages/admin_documents.js"></script>
+<script src="/static/js/pages/my_offers.js"></script>
+<script src="/static/js/pages/offers.js"></script>
+<script src="/static/js/pages/notifications.js"></script>
+<script src="/static/js/pages/analytics.js"></script>
 <script src="/static/js/pages/dashboard.js"></script>
 <script src="/static/js/pages/doctors.js"></script>
 <script src="/static/js/pages/institutions.js"></script>

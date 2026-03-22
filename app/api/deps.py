@@ -1,17 +1,85 @@
+import uuid
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
+from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
+from app.core.security import decode_access_token, oauth2_scheme
+from app.models.user import User
+from app.repositories.user import UserRepository
+from app.services.analytics import AnalyticsService
 from app.services.assignment import AssignmentService
+from app.services.audit import AuditService
+from app.services.auth import AuthService
 from app.services.availability import AvailabilityService
 from app.services.doctor import DoctorService
+from app.services.document import DocumentService
 from app.services.institution import InstitutionService
+from app.services.notification import NotificationService
+from app.services.offer import OfferService
+from app.services.reliability import ReliabilityService
 from app.services.shift import ShiftService
+from app.utils.enums import UserRole
 
 DbSession = Annotated[AsyncSession, Depends(get_session)]
 
+
+# --- Auth dependencies ---
+
+async def get_current_user_optional(
+    session: DbSession,
+    token: str | None = Depends(oauth2_scheme),
+) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+    except JWTError:
+        return None
+    repo = UserRepository(session)
+    user = await repo.get_by_id(uuid.UUID(user_id))
+    if user and not user.is_active:
+        return None
+    return user
+
+
+async def get_current_user(
+    user: User | None = Depends(get_current_user_optional),
+) -> User:
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+CurrentUser = Annotated[User, Depends(get_current_user)]
+OptionalUser = Annotated[User | None, Depends(get_current_user_optional)]
+
+
+def require_role(*roles: UserRole):
+    async def checker(user: CurrentUser) -> User:
+        if user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role {user.role} not authorized. Required: {[r.value for r in roles]}",
+            )
+        return user
+    return checker
+
+
+ADMIN_ROLES = (UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.COORDINATORE)
+RequireAdmin = Annotated[User, Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.COORDINATORE))]
+
+
+# --- Service factories ---
 
 async def get_doctor_service(session: DbSession) -> DoctorService:
     return DoctorService(session)
@@ -31,3 +99,31 @@ async def get_availability_service(session: DbSession) -> AvailabilityService:
 
 async def get_assignment_service(session: DbSession) -> AssignmentService:
     return AssignmentService(session)
+
+
+async def get_auth_service(session: DbSession) -> AuthService:
+    return AuthService(session)
+
+
+async def get_document_service(session: DbSession) -> DocumentService:
+    return DocumentService(session)
+
+
+async def get_offer_service(session: DbSession) -> OfferService:
+    return OfferService(session)
+
+
+async def get_notification_service(session: DbSession) -> NotificationService:
+    return NotificationService(session)
+
+
+async def get_audit_service(session: DbSession) -> AuditService:
+    return AuditService(session)
+
+
+async def get_reliability_service(session: DbSession) -> ReliabilityService:
+    return ReliabilityService(session)
+
+
+async def get_analytics_service(session: DbSession) -> AnalyticsService:
+    return AnalyticsService(session)

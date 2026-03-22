@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import get_institution_service
+from app.api.deps import RequireAdmin, get_institution_service
 from app.schemas.common import PaginatedResponse
 from app.schemas.institution import (
     InstitutionCreate,
@@ -25,7 +25,7 @@ InstSvc = Annotated[InstitutionService, Depends(get_institution_service)]
 
 
 @router.post("/", response_model=InstitutionRead, status_code=201)
-async def create_institution(data: InstitutionCreate, svc: InstSvc):
+async def create_institution(data: InstitutionCreate, svc: InstSvc, admin: RequireAdmin):
     return await svc.create(data)
 
 
@@ -44,7 +44,7 @@ async def get_institution(institution_id: uuid.UUID, svc: InstSvc):
 
 
 @router.patch("/{institution_id}", response_model=InstitutionRead)
-async def update_institution(institution_id: uuid.UUID, data: InstitutionUpdate, svc: InstSvc):
+async def update_institution(institution_id: uuid.UUID, data: InstitutionUpdate, svc: InstSvc, admin: RequireAdmin):
     inst = await svc.update(institution_id, data)
     if not inst:
         raise HTTPException(404, "Institution not found")
@@ -52,14 +52,14 @@ async def update_institution(institution_id: uuid.UUID, data: InstitutionUpdate,
 
 
 @router.delete("/{institution_id}", status_code=204)
-async def delete_institution(institution_id: uuid.UUID, svc: InstSvc):
+async def delete_institution(institution_id: uuid.UUID, svc: InstSvc, admin: RequireAdmin):
     if not await svc.delete(institution_id):
         raise HTTPException(404, "Institution not found")
 
 
 # Sites
 @router.post("/{institution_id}/sites", response_model=SiteRead, status_code=201)
-async def create_site(institution_id: uuid.UUID, data: SiteCreate, svc: InstSvc):
+async def create_site(institution_id: uuid.UUID, data: SiteCreate, svc: InstSvc, admin: RequireAdmin):
     return await svc.create_site(institution_id, data)
 
 

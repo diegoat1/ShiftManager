@@ -6,12 +6,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TimestampMixin
 from app.models.requirement import CodeLevel  # noqa: F401 — needed for FK resolution
+from app.utils.enums import HomologationStatus
 
 
 class Doctor(TimestampMixin, Base):
     __tablename__ = "doctors"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), unique=True, default=None)
     fiscal_code: Mapped[str] = mapped_column(String(16), unique=True, index=True)
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
@@ -33,6 +35,17 @@ class Doctor(TimestampMixin, Base):
     can_emergency_vehicle: Mapped[bool] = mapped_column(default=False)
     years_experience: Mapped[int] = mapped_column(default=0)
 
+    # Profile fields
+    birth_date: Mapped[date | None] = mapped_column(default=None)
+    residence_address: Mapped[str | None] = mapped_column(String(500), default=None)
+    domicile_city: Mapped[str | None] = mapped_column(String(100), default=None)
+    homologation_status: Mapped[HomologationStatus] = mapped_column(default=HomologationStatus.PENDING)
+    ordine_province: Mapped[str | None] = mapped_column(String(2), default=None)
+    ordine_number: Mapped[str | None] = mapped_column(String(20), default=None)
+    has_own_vehicle: Mapped[bool] = mapped_column(default=False)
+    profile_completion_percent: Mapped[int] = mapped_column(default=0)
+
+    user: Mapped["User | None"] = relationship(back_populates="doctor", foreign_keys=[user_id])
     certifications: Mapped[list["DoctorCertification"]] = relationship(back_populates="doctor", cascade="all, delete-orphan")
     languages: Mapped[list["DoctorLanguage"]] = relationship(back_populates="doctor", cascade="all, delete-orphan")
     preferences: Mapped["DoctorPreference | None"] = relationship(back_populates="doctor", uselist=False, cascade="all, delete-orphan")

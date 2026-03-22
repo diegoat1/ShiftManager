@@ -10,6 +10,7 @@ from app.models.shift import Shift
 from app.repositories.assignment import AssignmentRepository
 from app.repositories.availability import AvailabilityRepository
 from app.repositories.doctor import DoctorRepository
+from app.repositories.document import DocumentRepository, DocumentTypeRepository
 from app.repositories.shift import ShiftRepository
 from app.rules.constraints import MAX_CONSECUTIVE_DAYS, MAX_NIGHT_SHIFTS_PER_MONTH, MIN_REST_HOURS
 from app.utils.distance import haversine
@@ -22,6 +23,8 @@ class EligibilityEngine:
         self.shift_repo = ShiftRepository(session)
         self.assignment_repo = AssignmentRepository(session)
         self.availability_repo = AvailabilityRepository(session)
+        self.doc_repo = DocumentRepository(session)
+        self.doc_type_repo = DocumentTypeRepository(session)
 
     async def check(self, doctor_id: uuid.UUID, shift_id: uuid.UUID) -> tuple[bool, list[str], list[str]]:
         """Returns (is_eligible, failed_reasons, warnings)."""
@@ -51,6 +54,9 @@ class EligibilityEngine:
         await self._check_years_experience(doctor, shift, reasons)
         await self._check_monthly_shift_limit(doctor, shift, reasons)
         await self._check_night_shift_limit_personal(doctor, shift, reasons)
+        # Document checks
+        await self._check_mandatory_documents(doctor, shift, reasons)
+        await self._check_document_expiry(doctor, shift, reasons)
 
         return len(reasons) == 0, reasons, warnings
 
@@ -218,3 +224,23 @@ class EligibilityEngine:
                 f"Personal night shift limit reached: {count}/{doctor.max_night_shifts_per_month} for "
                 f"{shift.date.year}-{shift.date.month:02d}"
             )
+
+    # --- Document checks ---
+
+    async def _check_mandatory_documents(self, doctor: Doctor, shift: Shift, reasons: list[str]) -> None:
+        mandatory_types = await self.doc_type_repo.get_mandatory()
+        if not mandatory_types:
+            return
+        approved_docs = await self.doc_repo.get_approved_by_doctor(doctor.id)
+        approved_type_ids = {d.document_type_id for d in approved_docs}
+        for dt in mandatory_types:
+            if dt.id not in approved_type_ids:
+                reasons.append(f"Missing mandatory document: {dt.name}")
+
+    async def _check_document_expiry(self, doctor: Doctor, shift: Shift, reasons: list[str]) -> None:
+        approved_docs = await self.doc_repo.get_approved_by_doctor(doctor.id)
+        shift_date = shift.date
+        for doc in approved_docs:
+            if doc.expires_at and doc.expires_at < shift_date:
+                type_name = doc.document_type.name if doc.document_type else str(doc.document_type_id)
+                reasons.append(f"Document expired: {type_name} (expired {doc.expires_at})")

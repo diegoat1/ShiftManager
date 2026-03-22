@@ -42,6 +42,9 @@ class ScoreBreakdownRead(BaseModel):
     workload_balance: int
     distance: int
     extra_qualifications: int
+    reliability: int = 0
+    fairness: int = 0
+    cost_efficiency: int = 0
 
 
 class ScoredEligibleDoctorRead(BaseModel):

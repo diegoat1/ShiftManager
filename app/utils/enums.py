@@ -9,6 +9,9 @@ class ShiftStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+    PROPOSING = "proposing"
+    PENDING_CONFIRMATION = "pending_confirmation"
+    UNCOVERED = "uncovered"
 
 
 class AssignmentStatus(str, enum.Enum):
@@ -48,3 +51,34 @@ class InstitutionType(str, enum.Enum):
     EMERGENZA_118 = "emergenza_118"
     CASA_DI_COMUNITA = "casa_di_comunita"
     RSA = "rsa"
+
+
+class UserRole(str, enum.Enum):
+    SUPERADMIN = "superadmin"
+    ADMIN = "admin"
+    COORDINATORE = "coordinatore"
+    OPERATORE = "operatore"
+    MEDICO = "medico"
+
+
+class HomologationStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    SUSPENDED = "suspended"
+    REVOKED = "revoked"
+
+
+class VerificationStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class OfferStatus(str, enum.Enum):
+    PROPOSED = "proposed"
+    VIEWED = "viewed"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"

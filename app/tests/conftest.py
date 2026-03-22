@@ -6,14 +6,16 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import Base, get_session
+from app.core.security import create_access_token, hash_password
 from app.main import app
 from app.models.doctor import CertificationType, Doctor, DoctorCertification, DoctorLanguage, Language
 from app.models.institution import Institution, InstitutionSite
 from app.models.requirement import CodeLevel, InstitutionLanguageRequirement, InstitutionRequirement
 from app.models.shift import Shift, ShiftLanguageRequirement, ShiftRequirement
 from app.models.availability import DoctorAvailability
-from app.core.security import hash_password
-from app.utils.enums import AvailabilityType, ShiftStatus
+from app.models.user import User
+from app.models.document import DocumentType
+from app.utils.enums import AvailabilityType, ShiftStatus, UserRole
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -48,6 +50,50 @@ async def client(session):
 
 
 @pytest.fixture
+async def admin_user(session: AsyncSession):
+    user = User(
+        email="admin@example.com",
+        password_hash=hash_password("admin123"),
+        role=UserRole.ADMIN,
+    )
+    session.add(user)
+    await session.flush()
+    return user
+
+
+@pytest.fixture
+async def admin_token(admin_user):
+    return create_access_token(str(admin_user.id))
+
+
+@pytest.fixture
+async def admin_headers(admin_token):
+    return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture
+async def medico_user(session: AsyncSession):
+    user = User(
+        email="medico@example.com",
+        password_hash=hash_password("medico123"),
+        role=UserRole.MEDICO,
+    )
+    session.add(user)
+    await session.flush()
+    return user
+
+
+@pytest.fixture
+async def medico_token(medico_user):
+    return create_access_token(str(medico_user.id))
+
+
+@pytest.fixture
+async def medico_headers(medico_token):
+    return {"Authorization": f"Bearer {medico_token}"}
+
+
+@pytest.fixture
 async def seed_lookups(session: AsyncSession):
     """Seed certification types, languages, and code levels."""
     cert_bls = CertificationType(name="BLS", description="Basic Life Support", validity_months=24)
@@ -65,6 +111,17 @@ async def seed_lookups(session: AsyncSession):
         "lang_it": lang_it, "lang_en": lang_en,
         "cl_white": cl_white, "cl_green": cl_green, "cl_yellow": cl_yellow, "cl_red": cl_red,
     }
+
+
+@pytest.fixture
+async def seed_document_types(session: AsyncSession):
+    """Seed document types."""
+    dt1 = DocumentType(code="assicurazione", name="Assicurazione Professionale", validity_months=12, is_mandatory=True)
+    dt2 = DocumentType(code="laurea", name="Laurea in Medicina", is_mandatory=True)
+    dt3 = DocumentType(code="cv", name="Curriculum Vitae", is_mandatory=False)
+    session.add_all([dt1, dt2, dt3])
+    await session.flush()
+    return {"assicurazione": dt1, "laurea": dt2, "cv": dt3}
 
 
 @pytest.fixture
@@ -95,6 +152,43 @@ async def sample_doctor(session: AsyncSession, seed_lookups):
     session.add(cert)
 
     # Add Italian language
+    lang = DoctorLanguage(
+        doctor_id=doctor.id,
+        language_id=lookups["lang_it"].id,
+        proficiency_level=5,
+    )
+    session.add(lang)
+    await session.flush()
+    return doctor
+
+
+@pytest.fixture
+async def sample_doctor_with_user(session: AsyncSession, seed_lookups, medico_user):
+    lookups = seed_lookups
+    doctor = Doctor(
+        user_id=medico_user.id,
+        fiscal_code="RSSMRA80A01H501Z",
+        first_name="Mario",
+        last_name="Rossi",
+        email="medico@example.com",
+        password_hash=hash_password("medico123"),
+        lat=41.9028,
+        lon=12.4964,
+        max_distance_km=50.0,
+        is_active=True,
+    )
+    session.add(doctor)
+    await session.flush()
+
+    cert = DoctorCertification(
+        doctor_id=doctor.id,
+        certification_type_id=lookups["cert_bls"].id,
+        obtained_date=date(2025, 1, 1),
+        expiry_date=date(2027, 1, 1),
+        is_active=True,
+    )
+    session.add(cert)
+
     lang = DoctorLanguage(
         doctor_id=doctor.id,
         language_id=lookups["lang_it"].id,
