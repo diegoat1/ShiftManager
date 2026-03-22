@@ -1,11 +1,14 @@
-"""Seed reference data: certification types, languages, code levels."""
+"""Seed reference data: certification types, languages, code levels, admin user."""
 import asyncio
 
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
+from app.core.security import hash_password
 from app.models.doctor import CertificationType, Language
 from app.models.requirement import CodeLevel
+from app.models.user import User
+from app.utils.enums import UserRole
 
 CERTIFICATION_TYPES = [
     {"name": "BLSD", "description": "Basic Life Support Defibrillation", "validity_months": 24},
@@ -64,6 +67,18 @@ async def seed():
             )
             if not existing.scalar_one_or_none():
                 session.add(CodeLevel(**cl_data))
+
+        # Default admin user
+        admin_email = "datoffaleti@gmail.com"
+        existing_admin = await session.execute(
+            select(User).where(User.email == admin_email)
+        )
+        if not existing_admin.scalar_one_or_none():
+            session.add(User(
+                email=admin_email,
+                password_hash=hash_password("Toffaletti26"),
+                role=UserRole.ADMIN,
+            ))
 
         await session.commit()
         print("Seed data loaded successfully.")
