@@ -1,12 +1,19 @@
 import uuid
 from datetime import date
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import Enum as SAEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TimestampMixin
 from app.models.requirement import CodeLevel  # noqa: F401 — needed for FK resolution
 from app.utils.enums import HomologationStatus
+
+_homologation_enum = SAEnum(
+    HomologationStatus,
+    values_callable=lambda e: [m.value for m in e],
+    name="homologationstatus",
+    create_type=False,
+)
 
 
 class Doctor(TimestampMixin, Base):
@@ -39,7 +46,7 @@ class Doctor(TimestampMixin, Base):
     birth_date: Mapped[date | None] = mapped_column(default=None)
     residence_address: Mapped[str | None] = mapped_column(String(500), default=None)
     domicile_city: Mapped[str | None] = mapped_column(String(100), default=None)
-    homologation_status: Mapped[HomologationStatus] = mapped_column(default=HomologationStatus.PENDING)
+    homologation_status: Mapped[HomologationStatus] = mapped_column(_homologation_enum, default=HomologationStatus.PENDING)
     ordine_province: Mapped[str | None] = mapped_column(String(2), default=None)
     ordine_number: Mapped[str | None] = mapped_column(String(20), default=None)
     has_own_vehicle: Mapped[bool] = mapped_column(default=False)

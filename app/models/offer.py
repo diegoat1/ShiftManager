@@ -1,11 +1,18 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import Enum as SAEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TimestampMixin
 from app.utils.enums import OfferStatus
+
+_offer_enum = SAEnum(
+    OfferStatus,
+    values_callable=lambda e: [m.value for m in e],
+    name="offerstatus",
+    create_type=False,
+)
 
 
 class ShiftOffer(TimestampMixin, Base):
@@ -15,7 +22,7 @@ class ShiftOffer(TimestampMixin, Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     shift_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("shifts.id", ondelete="CASCADE"))
     doctor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("doctors.id", ondelete="CASCADE"))
-    status: Mapped[OfferStatus] = mapped_column(default=OfferStatus.PROPOSED)
+    status: Mapped[OfferStatus] = mapped_column(_offer_enum, default=OfferStatus.PROPOSED)
     offered_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     expires_at: Mapped[datetime | None] = mapped_column(default=None)
     responded_at: Mapped[datetime | None] = mapped_column(default=None)
