@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,7 +25,7 @@ class AuthService:
         if not user.is_active:
             raise ValueError("Account is deactivated")
 
-        user.last_login_at = datetime.now(timezone.utc)
+        user.last_login_at = datetime.utcnow()
         await self.session.flush()
         await self.session.commit()
 
