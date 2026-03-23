@@ -3,13 +3,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import RequireAdmin, get_analytics_service, get_reliability_service, get_audit_service, require_role
-from app.models.user import User
-from app.schemas.analytics import AuditLogRead, DoctorStatsRead, KPIResponse, MonthlyKPI
+from app.api.deps import RequireAdmin, get_analytics_service, get_reliability_service
+from app.schemas.analytics import DoctorStatsRead, KPIResponse, MonthlyKPI
 from app.services.analytics import AnalyticsService
-from app.services.audit import AuditService
 from app.services.reliability import ReliabilityService
-from app.utils.enums import UserRole
 
 router = APIRouter(prefix="/admin/analytics", tags=["analytics"])
 
@@ -75,7 +72,7 @@ async def get_doctor_stats(doctor_id: uuid.UUID, admin: RequireAdmin, svc: Relia
 
 @router.post("/recalculate")
 async def recalculate_reliability(
-    user: Annotated[User, Depends(require_role(UserRole.SUPERADMIN))],
+    user: RequireAdmin,
     svc: ReliabilitySvc,
 ):
     count = await svc.recalculate_all()
