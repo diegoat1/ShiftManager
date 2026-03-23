@@ -65,11 +65,14 @@ OptionalUser = Annotated[User | None, Depends(get_current_user_optional)]
 
 
 def require_role(*roles: UserRole):
+    allowed_values = {r.value for r in roles}
+
     async def checker(user: CurrentUser) -> User:
-        if user.role not in roles:
+        role_value = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+        if role_value not in allowed_values:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Role {user.role} not authorized. Required: {[r.value for r in roles]}",
+                detail=f"Role {role_value} not authorized. Required: {list(allowed_values)}",
             )
         return user
     return checker
