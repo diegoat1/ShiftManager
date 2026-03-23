@@ -547,32 +547,85 @@
                                         </svg>
                                     </div>
                                 </div>
-                                <!-- Sites -->
+                                <!-- Expanded Detail -->
                                 <div x-show="isExpanded(inst.id)" x-transition class="border-t border-slate-200">
+                                    <!-- Institution info -->
+                                    <div class="p-4 bg-slate-50 border-b border-slate-200">
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                            <div><span class="text-slate-500">Codice Fiscale:</span><br><span class="font-mono" x-text="inst.tax_code"></span></div>
+                                            <div><span class="text-slate-500">Indirizzo:</span><br><span x-text="inst.address || 'N/D'"></span></div>
+                                            <div><span class="text-slate-500">Citta:</span><br><span x-text="(inst.city || '') + (inst.province ? ' (' + inst.province + ')' : '')"></span></div>
+                                            <div><span class="text-slate-500">Stato:</span><br><span :class="inst.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="inst.is_active ? 'Attiva' : 'Inattiva'"></span></div>
+                                        </div>
+                                        <!-- Requirements -->
+                                        <div x-show="requirements[inst.id]?.length > 0" class="mt-3">
+                                            <span class="text-xs font-medium text-slate-500">Requisiti certificazioni:</span>
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                <template x-for="r in requirements[inst.id] || []" :key="r.id">
+                                                    <span class="badge" :class="r.is_mandatory ? 'badge-red' : 'badge-gray'" x-text="'Cert #' + r.certification_type_id + (r.is_mandatory ? ' (obb.)' : '')"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div x-show="langRequirements[inst.id]?.length > 0" class="mt-2">
+                                            <span class="text-xs font-medium text-slate-500">Requisiti lingue:</span>
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                <template x-for="r in langRequirements[inst.id] || []" :key="r.id">
+                                                    <span class="badge badge-blue" x-text="'Lingua #' + r.language_id + ' (min. ' + r.min_proficiency + ')'"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Sites -->
                                     <template x-if="inst.sites?.length > 0">
                                         <div class="divide-y divide-slate-100">
                                             <template x-for="site in inst.sites" :key="site.id">
                                                 <div class="p-4 pl-8">
                                                     <div class="flex items-center justify-between mb-2">
                                                         <h4 class="font-medium text-slate-700" x-text="site.name"></h4>
-                                                        <span :class="site.is_active ? 'badge-green' : 'badge-red'" class="badge"
-                                                              x-text="site.is_active ? 'Attiva' : 'Inattiva'"></span>
+                                                        <span :class="site.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="site.is_active ? 'Attiva' : 'Inattiva'"></span>
                                                     </div>
-                                                    <p x-show="site.city" class="text-sm text-slate-500 mb-2"
-                                                       x-text="(site.address ? site.address + ', ' : '') + site.city + (site.province ? ' (' + site.province + ')' : '')"></p>
+                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                                                        <div><span class="text-slate-500">Indirizzo:</span><br><span x-text="(site.address ? site.address + ', ' : '') + (site.city || '') + (site.province ? ' (' + site.province + ')' : '')"></span></div>
+                                                        <div><span class="text-slate-500">Coordinate:</span><br><span x-text="site.lat && site.lon ? site.lat.toFixed(4) + ', ' + site.lon.toFixed(4) : 'N/D'"></span></div>
+                                                        <div><span class="text-slate-500">Exp. minima:</span><br><span x-text="site.min_years_experience > 0 ? site.min_years_experience + ' anni' : 'Nessuna'"></span></div>
+                                                        <div><span class="text-slate-500">Codice min.:</span><br><span x-text="site.min_code_level_id ? 'Livello #' + site.min_code_level_id : 'Nessuno'"></span></div>
+                                                    </div>
                                                     <!-- Amenities -->
-                                                    <div class="flex flex-wrap gap-2 mb-2">
+                                                    <div class="flex flex-wrap gap-2 mb-3">
                                                         <span :class="site.lodging_available ? 'active' : ''" class="amenity">Alloggio: <span x-text="site.lodging_available ? 'Si' : 'No'"></span></span>
                                                         <span :class="site.meal_support ? 'active' : ''" class="amenity">Pasti: <span x-text="site.meal_support ? 'Si' : 'No'"></span></span>
                                                         <span :class="site.parking_available ? 'active' : ''" class="amenity">Parcheggio: <span x-text="site.parking_available ? 'Si' : 'No'"></span></span>
                                                     </div>
-                                                    <!-- Requirements -->
-                                                    <div class="flex flex-wrap gap-2 text-xs">
+                                                    <!-- Site requirements -->
+                                                    <div class="flex flex-wrap gap-2 text-xs mb-3">
                                                         <span x-show="site.requires_independent_work" class="badge badge-yellow">Lavoro autonomo</span>
                                                         <span x-show="site.requires_emergency_vehicle" class="badge badge-red">Mezzo emergenza</span>
-                                                        <span x-show="site.min_years_experience > 0" class="badge badge-gray"
-                                                              x-text="'Min. ' + site.min_years_experience + ' anni esp.'"></span>
                                                     </div>
+                                                    <!-- Upcoming shifts -->
+                                                    <template x-if="siteShifts[site.id]?.length > 0">
+                                                        <div>
+                                                            <h5 class="text-xs font-medium text-slate-500 mb-2">Turni prossimi 30 giorni (<span x-text="siteShifts[site.id].length"></span>)</h5>
+                                                            <div class="space-y-1 max-h-40 overflow-y-auto">
+                                                                <template x-for="shift in siteShifts[site.id]" :key="shift.id">
+                                                                    <div class="flex items-center justify-between text-xs bg-white border border-slate-100 rounded px-2 py-1.5">
+                                                                        <div>
+                                                                            <span class="font-medium" x-text="fmtDt(shift.start_datetime)"></span>
+                                                                            <span class="text-slate-400 mx-1">-</span>
+                                                                            <span x-text="fmtDt(shift.end_datetime)"></span>
+                                                                            <span x-show="shift.is_night" class="ml-1 badge badge-purple text-xs">Notte</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2">
+                                                                            <span class="text-slate-500" x-text="(shift.assigned_count || 0) + '/' + shift.required_doctors + ' medici'"></span>
+                                                                            <span :class="shiftStatusColor(shift.status)" class="badge" x-text="shiftStatusLabel(shift.status)"></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="!siteShifts[site.id]?.length">
+                                                        <p class="text-xs text-slate-400">Nessun turno nei prossimi 30 giorni</p>
+                                                    </template>
                                                 </div>
                                             </template>
                                         </div>

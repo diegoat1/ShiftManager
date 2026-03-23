@@ -4,6 +4,10 @@ document.addEventListener('alpine:init', () => {
         institutions: [],
         loading: true,
         expanded: {},
+        requirements: {},
+        langRequirements: {},
+        siteShifts: {},
+        loadingDetail: {},
 
         // Add structure modal
         structureModalOpen: false,
@@ -35,12 +39,70 @@ document.addEventListener('alpine:init', () => {
             this.loading = false;
         },
 
-        toggle(id) {
+        async toggle(id) {
             this.expanded[id] = !this.expanded[id];
+            if (this.expanded[id] && !this.requirements[id]) {
+                await this.loadInstitutionDetail(id);
+            }
+        },
+
+        async loadInstitutionDetail(instId) {
+            this.loadingDetail[instId] = true;
+            try {
+                const [reqs, langReqs] = await Promise.all([
+                    API.get(`/institutions/${instId}/requirements`).catch(() => []),
+                    API.get(`/institutions/${instId}/language-requirements`).catch(() => []),
+                ]);
+                this.requirements[instId] = reqs;
+                this.langRequirements[instId] = langReqs;
+
+                // Load shifts for each site (next 30 days)
+                const inst = this.institutions.find(i => i.id === instId);
+                if (inst?.sites) {
+                    const now = new Date();
+                    const start = now.toISOString().split('T')[0];
+                    const endDate = new Date(now);
+                    endDate.setDate(endDate.getDate() + 30);
+                    const end = endDate.toISOString().split('T')[0];
+                    for (const site of inst.sites) {
+                        this.siteShifts[site.id] = await API.get(`/shifts/calendar/${site.id}`, { start, end }).catch(() => []);
+                    }
+                }
+            } catch (e) {
+                console.error('Detail load failed:', e);
+            }
+            this.loadingDetail[instId] = false;
+        },
+
+        async loadSiteShifts(siteId) {
+            const now = new Date();
+            const start = now.toISOString().split('T')[0];
+            const endDate = new Date(now);
+            endDate.setDate(endDate.getDate() + 30);
+            const end = endDate.toISOString().split('T')[0];
+            this.siteShifts[siteId] = await API.get(`/shifts/calendar/${siteId}`, { start, end }).catch(() => []);
         },
 
         isExpanded(id) {
             return !!this.expanded[id];
+        },
+
+        fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('it-IT');
+        },
+
+        fmtDt(dt) {
+            if (!dt) return '';
+            return new Date(dt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        },
+
+        shiftStatusLabel(s) {
+            return { draft: 'Bozza', open: 'Aperto', partially_filled: 'Parziale', filled: 'Completo', in_progress: 'In corso', completed: 'Completato', cancelled: 'Annullato', proposing: 'In proposta', uncovered: 'Scoperto' }[s] || s;
+        },
+
+        shiftStatusColor(s) {
+            return { open: 'badge-blue', partially_filled: 'badge-yellow', filled: 'badge-green', draft: 'badge-gray', cancelled: 'badge-red', in_progress: 'badge-purple', completed: 'badge-teal', proposing: 'badge-blue', uncovered: 'badge-red' }[s] || '';
         },
 
         typeLabel(type) {
