@@ -484,7 +484,7 @@ async def main():
     async with async_session_factory() as session:
         # Skip if demo data already exists
         count = await session.scalar(select(func.count()).select_from(Doctor))
-        if count and count > 0:
+        if count and count > 5:
             print(f"Demo data already exists ({count} doctors). Skipping.")
             return
 
