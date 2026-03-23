@@ -293,8 +293,14 @@
                     <template x-if="selectedDoctor">
                         <div class="mt-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-slate-800"
-                                    x-text="selectedDoctor.first_name + ' ' + selectedDoctor.last_name"></h3>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm"
+                                         x-text="(selectedDoctor.first_name?.[0] || '') + (selectedDoctor.last_name?.[0] || '')"></div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-slate-800" x-text="selectedDoctor.first_name + ' ' + selectedDoctor.last_name"></h3>
+                                        <span class="text-xs text-slate-500 font-mono" x-text="selectedDoctor.fiscal_code"></span>
+                                    </div>
+                                </div>
                                 <button @click="closeDetail()" class="text-slate-400 hover:text-slate-600">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
@@ -302,64 +308,164 @@
 
                             <div x-show="detailLoading" class="flex justify-center py-6"><div class="spinner"></div></div>
 
-                            <div x-show="!detailLoading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <!-- Info -->
-                                <div>
-                                    <h4 class="text-sm font-medium text-slate-500 mb-2">Informazioni</h4>
-                                    <dl class="space-y-1.5 text-sm">
-                                        <div class="flex justify-between"><dt class="text-slate-500">CF:</dt><dd class="font-mono" x-text="selectedDoctor.fiscal_code"></dd></div>
-                                        <div class="flex justify-between"><dt class="text-slate-500">Email:</dt><dd x-text="selectedDoctor.email"></dd></div>
-                                        <div class="flex justify-between"><dt class="text-slate-500">Telefono:</dt><dd x-text="selectedDoctor.phone || 'N/D'"></dd></div>
-                                        <div class="flex justify-between"><dt class="text-slate-500">Esperienza:</dt><dd x-text="selectedDoctor.years_experience + ' anni'"></dd></div>
-                                        <div class="flex justify-between"><dt class="text-slate-500">Max turni/mese:</dt><dd x-text="selectedDoctor.max_shifts_per_month"></dd></div>
-                                        <div class="flex justify-between"><dt class="text-slate-500">Lavoro autonomo:</dt><dd x-text="selectedDoctor.can_work_alone ? 'Si' : 'No'"></dd></div>
-                                        <div class="flex justify-between"><dt class="text-slate-500">Mezzo emergenza:</dt><dd x-text="selectedDoctor.can_emergency_vehicle ? 'Si' : 'No'"></dd></div>
-                                    </dl>
+                            <div x-show="!detailLoading">
+                                <!-- Tabs -->
+                                <div class="flex gap-1 border-b border-slate-200 mb-4">
+                                    <button @click="detailTab = 'info'" :class="detailTab === 'info' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'" class="px-3 py-2 text-sm font-medium border-b-2 -mb-px">Informazioni</button>
+                                    <button @click="detailTab = 'availability'" :class="detailTab === 'availability' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'" class="px-3 py-2 text-sm font-medium border-b-2 -mb-px">Disponibilita</button>
+                                    <button @click="detailTab = 'assignments'" :class="detailTab === 'assignments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'" class="px-3 py-2 text-sm font-medium border-b-2 -mb-px">Turni (<span x-text="assignments.length"></span>)</button>
+                                    <button @click="detailTab = 'documents'" :class="detailTab === 'documents' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'" class="px-3 py-2 text-sm font-medium border-b-2 -mb-px">Documenti (<span x-text="documents.length"></span>)</button>
                                 </div>
-                                <!-- Certifications -->
-                                <div>
-                                    <h4 class="text-sm font-medium text-slate-500 mb-2">Certificazioni</h4>
-                                    <template x-if="selectedDoctor.certifications?.length > 0">
-                                        <ul class="space-y-1.5">
-                                            <template x-for="cert in selectedDoctor.certifications" :key="cert.id">
-                                                <li class="text-sm">
-                                                    <span :class="cert.is_active ? 'badge-green' : 'badge-red'" class="badge"
-                                                          x-text="cert.certification_type?.name || ('Tipo #' + cert.certification_type_id)"></span>
-                                                </li>
-                                            </template>
-                                        </ul>
-                                    </template>
-                                    <template x-if="!selectedDoctor.certifications?.length">
-                                        <p class="text-sm text-slate-400">Nessuna certificazione</p>
-                                    </template>
-                                </div>
-                                <!-- Languages & Preferences -->
-                                <div>
-                                    <h4 class="text-sm font-medium text-slate-500 mb-2">Lingue</h4>
-                                    <template x-if="selectedDoctor.languages?.length > 0">
-                                        <ul class="space-y-1.5 mb-4">
-                                            <template x-for="lang in selectedDoctor.languages" :key="lang.id">
-                                                <li class="text-sm">
-                                                    <span class="badge badge-blue"
-                                                          x-text="(lang.language?.name || lang.language_id) + ' (Liv. ' + lang.proficiency_level + ')'"></span>
-                                                </li>
-                                            </template>
-                                        </ul>
-                                    </template>
-                                    <template x-if="!selectedDoctor.languages?.length">
-                                        <p class="text-sm text-slate-400 mb-4">Nessuna lingua</p>
-                                    </template>
-                                    <template x-if="selectedDoctor.preferences">
-                                        <div>
-                                            <h4 class="text-sm font-medium text-slate-500 mb-2">Preferenze</h4>
-                                            <div class="flex flex-wrap gap-1">
-                                                <span x-show="selectedDoctor.preferences.prefers_day" class="badge badge-yellow">Giorno</span>
-                                                <span x-show="selectedDoctor.preferences.prefers_night" class="badge badge-purple">Notte</span>
-                                                <span x-show="selectedDoctor.preferences.prefers_weekends" class="badge badge-blue">Weekend</span>
-                                                <span x-show="selectedDoctor.preferences.avoids_weekends" class="badge badge-gray">No Weekend</span>
+
+                                <!-- Tab: Info -->
+                                <div x-show="detailTab === 'info'" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <h4 class="text-sm font-medium text-slate-500 mb-2">Dati Personali</h4>
+                                        <dl class="space-y-1.5 text-sm">
+                                            <div class="flex justify-between"><dt class="text-slate-500">Email:</dt><dd x-text="selectedDoctor.email"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Telefono:</dt><dd x-text="selectedDoctor.phone || 'N/D'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Data nascita:</dt><dd x-text="selectedDoctor.birth_date ? fmtDate(selectedDoctor.birth_date) : 'N/D'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Residenza:</dt><dd x-text="selectedDoctor.residence_address || 'N/D'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Domicilio:</dt><dd x-text="selectedDoctor.domicile_city || 'N/D'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Ordine:</dt><dd x-text="(selectedDoctor.ordine_province || '—') + ' / ' + (selectedDoctor.ordine_number || '—')"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Omologazione:</dt><dd><span class="badge" :class="{'badge-green': selectedDoctor.homologation_status === 'approved', 'badge-yellow': selectedDoctor.homologation_status === 'pending', 'badge-red': selectedDoctor.homologation_status === 'suspended' || selectedDoctor.homologation_status === 'revoked'}" x-text="selectedDoctor.homologation_status || 'N/D'"></span></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Veicolo proprio:</dt><dd x-text="selectedDoctor.has_own_vehicle ? 'Si' : 'No'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Profilo:</dt><dd x-text="selectedDoctor.profile_completion_percent + '%'"></dd></div>
+                                        </dl>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-slate-500 mb-2">Lavoro</h4>
+                                        <dl class="space-y-1.5 text-sm">
+                                            <div class="flex justify-between"><dt class="text-slate-500">Esperienza:</dt><dd x-text="selectedDoctor.years_experience + ' anni'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Max turni/mese:</dt><dd x-text="selectedDoctor.max_shifts_per_month"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Max notturni/mese:</dt><dd x-text="selectedDoctor.max_night_shifts_per_month ?? 'N/D'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Max distanza:</dt><dd x-text="selectedDoctor.max_distance_km + ' km'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Lavoro autonomo:</dt><dd x-text="selectedDoctor.can_work_alone ? 'Si' : 'No'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Mezzo emergenza:</dt><dd x-text="selectedDoctor.can_emergency_vehicle ? 'Si' : 'No'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Ricollocarsi:</dt><dd x-text="selectedDoctor.willing_to_relocate ? 'Si' : 'No'"></dd></div>
+                                            <div class="flex justify-between"><dt class="text-slate-500">Pernottamento:</dt><dd x-text="selectedDoctor.willing_overnight_stay ? 'Si' : 'No'"></dd></div>
+                                        </dl>
+                                        <h4 class="text-sm font-medium text-slate-500 mt-4 mb-2">Certificazioni</h4>
+                                        <template x-if="selectedDoctor.certifications?.length > 0">
+                                            <ul class="space-y-1">
+                                                <template x-for="cert in selectedDoctor.certifications" :key="cert.id">
+                                                    <li class="text-sm flex items-center gap-2">
+                                                        <span :class="cert.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="cert.certification_type?.name || ('Tipo #' + cert.certification_type_id)"></span>
+                                                        <span x-show="cert.expiry_date" class="text-xs text-slate-400" x-text="'scade ' + fmtDate(cert.expiry_date)"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </template>
+                                        <template x-if="!selectedDoctor.certifications?.length"><p class="text-sm text-slate-400">Nessuna</p></template>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-slate-500 mb-2">Lingue</h4>
+                                        <template x-if="selectedDoctor.languages?.length > 0">
+                                            <ul class="space-y-1 mb-4">
+                                                <template x-for="lang in selectedDoctor.languages" :key="lang.id">
+                                                    <li class="text-sm"><span class="badge badge-blue" x-text="(lang.language?.name || lang.language_id) + ' (Liv. ' + lang.proficiency_level + ')'"></span></li>
+                                                </template>
+                                            </ul>
+                                        </template>
+                                        <template x-if="!selectedDoctor.languages?.length"><p class="text-sm text-slate-400 mb-4">Nessuna</p></template>
+                                        <template x-if="selectedDoctor.preferences">
+                                            <div>
+                                                <h4 class="text-sm font-medium text-slate-500 mb-2">Preferenze</h4>
+                                                <div class="flex flex-wrap gap-1">
+                                                    <span x-show="selectedDoctor.preferences.prefers_day" class="badge badge-yellow">Giorno</span>
+                                                    <span x-show="selectedDoctor.preferences.prefers_night" class="badge badge-purple">Notte</span>
+                                                    <span x-show="selectedDoctor.preferences.prefers_weekends" class="badge badge-blue">Weekend</span>
+                                                    <span x-show="selectedDoctor.preferences.avoids_weekends" class="badge badge-gray">No Weekend</span>
+                                                </div>
                                             </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Tab: Availability -->
+                                <div x-show="detailTab === 'availability'">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-slate-500 mb-3">Disponibilita (prossimi 90 giorni)</h4>
+                                            <template x-if="availability.length > 0">
+                                                <div class="space-y-1.5">
+                                                    <template x-for="a in availability" :key="a.id || (a.date + a.start_time)">
+                                                        <div class="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-2">
+                                                            <div>
+                                                                <span class="font-medium" x-text="fmtDate(a.date)"></span>
+                                                                <span class="text-slate-500 ml-2" x-text="(a.start_time || '').substring(0,5) + ' - ' + (a.end_time || '').substring(0,5)"></span>
+                                                            </div>
+                                                            <span :class="availTypeColor(a.availability_type)" class="badge" x-text="availTypeLabel(a.availability_type)"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template x-if="availability.length === 0"><p class="text-sm text-slate-400">Nessuna disponibilita dichiarata</p></template>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-medium text-slate-500 mb-3">Indisponibilita</h4>
+                                            <template x-if="unavailability.length > 0">
+                                                <div class="space-y-1.5">
+                                                    <template x-for="u in unavailability" :key="u.id">
+                                                        <div class="text-sm bg-red-50 rounded-lg px-3 py-2">
+                                                            <div class="flex items-center justify-between">
+                                                                <span class="font-medium" x-text="fmtDate(u.start_date) + ' — ' + fmtDate(u.end_date)"></span>
+                                                                <span class="badge badge-red" x-text="unavailReasonLabel(u.reason)"></span>
+                                                            </div>
+                                                            <div x-show="u.notes" class="text-xs text-slate-500 mt-1" x-text="u.notes"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template x-if="unavailability.length === 0"><p class="text-sm text-slate-400">Nessuna indisponibilita</p></template>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab: Assignments -->
+                                <div x-show="detailTab === 'assignments'">
+                                    <template x-if="assignments.length > 0">
+                                        <div class="overflow-x-auto">
+                                            <table class="data-table w-full text-sm">
+                                                <thead class="bg-slate-50 border-b"><tr>
+                                                    <th class="text-left px-4 py-2 font-medium text-slate-600">Data</th>
+                                                    <th class="text-left px-4 py-2 font-medium text-slate-600">Stato</th>
+                                                    <th class="text-left px-4 py-2 font-medium text-slate-600">Compenso</th>
+                                                    <th class="text-left px-4 py-2 font-medium text-slate-600">Assegnato il</th>
+                                                </tr></thead>
+                                                <tbody>
+                                                    <template x-for="a in assignments" :key="a.id">
+                                                        <tr class="border-b border-slate-100">
+                                                            <td class="px-4 py-2" x-text="fmtDt(a.assigned_at)"></td>
+                                                            <td class="px-4 py-2"><span :class="statusColor(a.status)" class="badge" x-text="statusLabel(a.status)"></span></td>
+                                                            <td class="px-4 py-2" x-text="'€' + (a.pay_amount || 0).toFixed(2)"></td>
+                                                            <td class="px-4 py-2 text-slate-500" x-text="fmtDt(a.assigned_at)"></td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </template>
+                                    <template x-if="assignments.length === 0"><p class="text-sm text-slate-400">Nessun turno assegnato</p></template>
+                                </div>
+
+                                <!-- Tab: Documents -->
+                                <div x-show="detailTab === 'documents'">
+                                    <template x-if="documents.length > 0">
+                                        <div class="space-y-2">
+                                            <template x-for="doc in documents" :key="doc.id">
+                                                <div class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 text-sm">
+                                                    <div>
+                                                        <span class="font-medium" x-text="doc.document_type?.name || 'Documento'"></span>
+                                                        <span class="text-xs text-slate-500 ml-2" x-text="doc.original_filename"></span>
+                                                        <span x-show="doc.expires_at" class="text-xs text-slate-400 ml-2" x-text="'scade ' + fmtDate(doc.expires_at)"></span>
+                                                    </div>
+                                                    <span :class="docStatusColor(doc.verification_status)" class="badge" x-text="docStatusLabel(doc.verification_status)"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="documents.length === 0"><p class="text-sm text-slate-400">Nessun documento</p></template>
                                 </div>
                             </div>
                         </div>

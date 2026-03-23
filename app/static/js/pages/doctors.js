@@ -9,6 +9,11 @@ document.addEventListener('alpine:init', () => {
         loading: true,
         selectedDoctor: null,
         detailLoading: false,
+        availability: [],
+        unavailability: [],
+        assignments: [],
+        documents: [],
+        detailTab: 'info',
 
         // Add doctor modal
         doctorModalOpen: false,
@@ -76,8 +81,30 @@ document.addEventListener('alpine:init', () => {
 
         async selectDoctor(id) {
             this.detailLoading = true;
+            this.detailTab = 'info';
+            this.availability = [];
+            this.unavailability = [];
+            this.assignments = [];
+            this.documents = [];
             try {
-                this.selectedDoctor = await API.get(`/doctors/${id}`);
+                const now = new Date();
+                const start = now.toISOString().split('T')[0];
+                const endDate = new Date(now);
+                endDate.setDate(endDate.getDate() + 90);
+                const end = endDate.toISOString().split('T')[0];
+
+                const [doctor, avail, unavail, assigns, docs] = await Promise.all([
+                    API.get(`/doctors/${id}`),
+                    API.get(`/doctors/${id}/availability`, { start, end }).catch(() => []),
+                    API.get(`/doctors/${id}/unavailability`, { start, end }).catch(() => []),
+                    API.get(`/assignments/doctor/${id}`).catch(() => []),
+                    API.get(`/admin/documents/doctors/${id}`).catch(() => []),
+                ]);
+                this.selectedDoctor = doctor;
+                this.availability = avail;
+                this.unavailability = unavail;
+                this.assignments = assigns;
+                this.documents = docs;
             } catch (e) {
                 console.error('Doctor detail failed:', e);
             }
@@ -86,6 +113,48 @@ document.addEventListener('alpine:init', () => {
 
         closeDetail() {
             this.selectedDoctor = null;
+            this.availability = [];
+            this.unavailability = [];
+            this.assignments = [];
+            this.documents = [];
+        },
+
+        fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('it-IT');
+        },
+
+        fmtDt(dt) {
+            if (!dt) return '';
+            return new Date(dt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        },
+
+        availTypeLabel(type) {
+            return { available: 'Disponibile', preferred: 'Preferito', reluctant: 'Riluttante' }[type] || type;
+        },
+
+        availTypeColor(type) {
+            return { available: 'badge-green', preferred: 'badge-blue', reluctant: 'badge-yellow' }[type] || '';
+        },
+
+        unavailReasonLabel(r) {
+            return { vacation: 'Ferie', sick_leave: 'Malattia', personal: 'Personale', training: 'Formazione', other: 'Altro' }[r] || r;
+        },
+
+        statusLabel(s) {
+            return { proposed: 'Proposto', confirmed: 'Confermato', rejected: 'Rifiutato', cancelled: 'Annullato', completed: 'Completato' }[s] || s;
+        },
+
+        statusColor(s) {
+            return { proposed: 'badge-blue', confirmed: 'badge-green', rejected: 'badge-red', cancelled: 'badge-gray', completed: 'badge-teal' }[s] || '';
+        },
+
+        docStatusLabel(s) {
+            return { pending: 'In attesa', approved: 'Approvato', rejected: 'Rifiutato', expired: 'Scaduto' }[s] || s;
+        },
+
+        docStatusColor(s) {
+            return { pending: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', expired: 'badge-gray' }[s] || '';
         },
 
         async submitDoctor() {
