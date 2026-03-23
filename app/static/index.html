@@ -230,8 +230,14 @@
                 <div x-data="doctorsPage">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <h2 class="text-2xl font-bold text-slate-800">Medici</h2>
-                        <input type="text" x-model="search" placeholder="Cerca per nome, codice fiscale..."
-                               class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="flex items-center gap-2">
+                            <button @click="doctorModalOpen = true"
+                                    class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                + Medico
+                            </button>
+                            <input type="text" x-model="search" placeholder="Cerca per nome, codice fiscale..."
+                                   class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
                     </div>
 
                     <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
@@ -358,13 +364,59 @@
                             </div>
                         </div>
                     </template>
+                    <!-- Add Doctor Modal -->
+                    <template x-if="doctorModalOpen">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="doctorModalOpen = false">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" @click.stop>
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+                                    <h3 class="text-lg font-semibold text-slate-800">Aggiungi Medico</h3>
+                                    <button @click="doctorModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="p-5 space-y-4">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div><label class="block text-xs text-slate-500 mb-1">Nome *</label><input type="text" x-model="newDoctor.first_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Cognome *</label><input type="text" x-model="newDoctor.last_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Codice Fiscale *</label><input type="text" x-model="newDoctor.fiscal_code" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Email *</label><input type="email" x-model="newDoctor.email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Telefono</label><input type="text" x-model="newDoctor.phone" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Password *</label><input type="password" x-model="newDoctor.password" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Max turni/mese</label><input type="number" x-model.number="newDoctor.max_shifts_per_month" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Max notturni/mese</label><input type="number" x-model.number="newDoctor.max_night_shifts_per_month" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Anni esperienza</label><input type="number" x-model.number="newDoctor.years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Max distanza (km)</label><input type="number" x-model.number="newDoctor.max_distance_km" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-4 text-sm">
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.can_work_alone" class="rounded"> Lavoro autonomo</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.can_emergency_vehicle" class="rounded"> Mezzo emergenza</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.willing_to_relocate" class="rounded"> Disponibile a trasferirsi</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.willing_overnight_stay" class="rounded"> Pernottamento</label>
+                                    </div>
+                                    <div x-show="doctorError" class="text-sm text-red-600" x-text="doctorError"></div>
+                                    <div class="flex justify-end gap-2 pt-2">
+                                        <button @click="doctorModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
+                                        <button @click="submitDoctor()" :disabled="doctorSaving" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
+                                            <span x-show="!doctorSaving">Salva</span><span x-show="doctorSaving">Salvataggio...</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </template>
 
             <!-- ==================== STRUTTURE ==================== -->
             <template x-if="page === 'strutture'">
                 <div x-data="institutionsPage">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Strutture</h2>
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Strutture</h2>
+                        <button @click="structureModalOpen = true"
+                                class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">
+                            + Struttura
+                        </button>
+                    </div>
 
                     <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
 
@@ -427,6 +479,64 @@
                         </template>
                         <div x-show="institutions.length === 0" class="text-center py-12 text-slate-400">Nessuna istituzione trovata</div>
                     </div>
+
+                    <!-- Add Structure Modal -->
+                    <template x-if="structureModalOpen">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="structureModalOpen = false">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" @click.stop>
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+                                    <h3 class="text-lg font-semibold text-slate-800">Aggiungi Struttura e Sede</h3>
+                                    <button @click="structureModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="p-5 space-y-4">
+                                    <h4 class="text-sm font-semibold text-slate-700">Istituzione</h4>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="col-span-2"><label class="block text-xs text-slate-500 mb-1">Nome *</label><input type="text" x-model="newStructure.inst_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Codice Fiscale *</label><input type="text" x-model="newStructure.tax_code" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Tipo</label>
+                                            <select x-model="newStructure.institution_type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                                <option value="">-- Seleziona --</option>
+                                                <option value="pronto_soccorso">Pronto Soccorso</option>
+                                                <option value="punto_primo_intervento">Punto Primo Intervento</option>
+                                                <option value="guardia_medica">Guardia Medica</option>
+                                                <option value="emergenza_118">Emergenza 118</option>
+                                                <option value="casa_di_comunita">Casa di Comunita</option>
+                                                <option value="rsa">RSA</option>
+                                            </select>
+                                        </div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Indirizzo</label><input type="text" x-model="newStructure.inst_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Citta</label><input type="text" x-model="newStructure.inst_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Provincia</label><input type="text" x-model="newStructure.inst_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                    </div>
+                                    <hr class="border-slate-200">
+                                    <h4 class="text-sm font-semibold text-slate-700">Sede</h4>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="col-span-2"><label class="block text-xs text-slate-500 mb-1">Nome Sede *</label><input type="text" x-model="newStructure.site_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Indirizzo</label><input type="text" x-model="newStructure.site_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Citta</label><input type="text" x-model="newStructure.site_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Provincia</label><input type="text" x-model="newStructure.site_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Exp. Minima (anni)</label><input type="number" x-model.number="newStructure.min_years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-4 text-sm">
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.lodging_available" class="rounded"> Alloggio</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.meal_support" class="rounded"> Pasti</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.parking_available" class="rounded"> Parcheggio</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.requires_independent_work" class="rounded"> Lavoro autonomo</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.requires_emergency_vehicle" class="rounded"> Mezzo emergenza</label>
+                                    </div>
+                                    <div x-show="structureError" class="text-sm text-red-600" x-text="structureError"></div>
+                                    <div class="flex justify-end gap-2 pt-2">
+                                        <button @click="structureModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
+                                        <button @click="submitStructure()" :disabled="structureSaving" class="px-4 py-2 text-sm bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50">
+                                            <span x-show="!structureSaving">Salva</span><span x-show="structureSaving">Salvataggio...</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </template>
 
@@ -436,14 +546,6 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <h2 class="text-2xl font-bold text-slate-800">Calendario Turni</h2>
                         <div class="flex flex-wrap items-center gap-2">
-                            <button @click="structureModalOpen = true"
-                                    class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">
-                                + Struttura
-                            </button>
-                            <button @click="doctorModalOpen = true"
-                                    class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                                + Medico
-                            </button>
                             <select x-model="selectedSite" @change="onSiteChange()"
                                     class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">Seleziona una sede...</option>
@@ -474,173 +576,6 @@
                         </div>
                         <div id="fullcalendar" x-show="selectedSite"></div>
                     </div>
-
-                    <!-- Add Structure Modal -->
-                    <template x-if="structureModalOpen">
-                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="structureModalOpen = false">
-                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" @click.stop>
-                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
-                                    <h3 class="text-lg font-semibold text-slate-800">Aggiungi Struttura e Sede</h3>
-                                    <button @click="structureModalOpen = false" class="text-slate-400 hover:text-slate-600">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                </div>
-                                <div class="p-5 space-y-4">
-                                    <h4 class="text-sm font-semibold text-slate-700">Istituzione</h4>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div class="col-span-2">
-                                            <label class="block text-xs text-slate-500 mb-1">Nome *</label>
-                                            <input type="text" x-model="newStructure.inst_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Codice Fiscale *</label>
-                                            <input type="text" x-model="newStructure.tax_code" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Tipo</label>
-                                            <select x-model="newStructure.institution_type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                                <option value="">-- Seleziona --</option>
-                                                <option value="pronto_soccorso">Pronto Soccorso</option>
-                                                <option value="punto_primo_intervento">Punto Primo Intervento</option>
-                                                <option value="guardia_medica">Guardia Medica</option>
-                                                <option value="emergenza_118">Emergenza 118</option>
-                                                <option value="casa_di_comunita">Casa di Comunità</option>
-                                                <option value="rsa">RSA</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Indirizzo</label>
-                                            <input type="text" x-model="newStructure.inst_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Città</label>
-                                            <input type="text" x-model="newStructure.inst_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Provincia</label>
-                                            <input type="text" x-model="newStructure.inst_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                    </div>
-
-                                    <hr class="border-slate-200">
-                                    <h4 class="text-sm font-semibold text-slate-700">Sede</h4>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div class="col-span-2">
-                                            <label class="block text-xs text-slate-500 mb-1">Nome Sede *</label>
-                                            <input type="text" x-model="newStructure.site_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Indirizzo</label>
-                                            <input type="text" x-model="newStructure.site_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Città</label>
-                                            <input type="text" x-model="newStructure.site_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Provincia</label>
-                                            <input type="text" x-model="newStructure.site_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Exp. Minima (anni)</label>
-                                            <input type="number" x-model.number="newStructure.min_years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-wrap gap-4 text-sm">
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.lodging_available" class="rounded"> Alloggio</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.meal_support" class="rounded"> Pasti</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.parking_available" class="rounded"> Parcheggio</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.requires_independent_work" class="rounded"> Lavoro autonomo</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.requires_emergency_vehicle" class="rounded"> Mezzo emergenza</label>
-                                    </div>
-
-                                    <div x-show="structureError" class="text-sm text-red-600" x-text="structureError"></div>
-                                    <div class="flex justify-end gap-2 pt-2">
-                                        <button @click="structureModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
-                                        <button @click="submitStructure()" :disabled="structureSaving"
-                                                class="px-4 py-2 text-sm bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50">
-                                            <span x-show="!structureSaving">Salva</span>
-                                            <span x-show="structureSaving">Salvataggio...</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Add Doctor Modal -->
-                    <template x-if="doctorModalOpen">
-                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="doctorModalOpen = false">
-                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" @click.stop>
-                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
-                                    <h3 class="text-lg font-semibold text-slate-800">Aggiungi Medico</h3>
-                                    <button @click="doctorModalOpen = false" class="text-slate-400 hover:text-slate-600">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                </div>
-                                <div class="p-5 space-y-4">
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Nome *</label>
-                                            <input type="text" x-model="newDoctor.first_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Cognome *</label>
-                                            <input type="text" x-model="newDoctor.last_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Codice Fiscale *</label>
-                                            <input type="text" x-model="newDoctor.fiscal_code" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Email *</label>
-                                            <input type="email" x-model="newDoctor.email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Telefono</label>
-                                            <input type="text" x-model="newDoctor.phone" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Password *</label>
-                                            <input type="password" x-model="newDoctor.password" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Max turni/mese</label>
-                                            <input type="number" x-model.number="newDoctor.max_shifts_per_month" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Max notturni/mese</label>
-                                            <input type="number" x-model.number="newDoctor.max_night_shifts_per_month" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Anni esperienza</label>
-                                            <input type="number" x-model.number="newDoctor.years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-slate-500 mb-1">Max distanza (km)</label>
-                                            <input type="number" x-model.number="newDoctor.max_distance_km" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-wrap gap-4 text-sm">
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.can_work_alone" class="rounded"> Lavoro autonomo</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.can_emergency_vehicle" class="rounded"> Mezzo emergenza</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.willing_to_relocate" class="rounded"> Disponibile a trasferirsi</label>
-                                        <label class="flex items-center gap-2"><input type="checkbox" x-model="newDoctor.willing_overnight_stay" class="rounded"> Pernottamento</label>
-                                    </div>
-
-                                    <div x-show="doctorError" class="text-sm text-red-600" x-text="doctorError"></div>
-                                    <div class="flex justify-end gap-2 pt-2">
-                                        <button @click="doctorModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
-                                        <button @click="submitDoctor()" :disabled="doctorSaving"
-                                                class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
-                                            <span x-show="!doctorSaving">Salva</span>
-                                            <span x-show="doctorSaving">Salvataggio...</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
 
                     <!-- Assignment Modal -->
                     <template x-if="modalOpen">
