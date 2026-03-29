@@ -128,6 +128,18 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         Profilo
                     </a>
+                    <a href="#/disponibilita" @click="sidebarOpen = false"
+                       :class="page === 'disponibilita' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Disponibilita
+                    </a>
+                    <a href="#/qualifiche" @click="sidebarOpen = false"
+                       :class="page === 'qualifiche' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        Qualifiche
+                    </a>
                     <a href="#/documenti" @click="sidebarOpen = false"
                        :class="page === 'documenti' ? 'active' : 'hover:bg-slate-700'"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
@@ -892,7 +904,8 @@
                     <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
                     <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
                     <template x-if="!loading && profile">
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                        <div>
+                            <!-- Avatar + completion -->
                             <div class="mb-4 flex items-center gap-3">
                                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl font-bold"
                                      x-text="(profile.first_name?.[0] || '') + (profile.last_name?.[0] || '')"></div>
@@ -905,27 +918,308 @@
                                     </div>
                                 </div>
                             </div>
-                            <form @submit.prevent="save()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Nome</label><input x-model="profile.first_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Cognome</label><input x-model="profile.last_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Telefono</label><input x-model="profile.phone" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Data di Nascita</label><input x-model="profile.birth_date" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-600 mb-1">Indirizzo Residenza</label><input x-model="profile.residence_address" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Citta Domicilio</label><input x-model="profile.domicile_city" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Provincia Ordine</label><input x-model="profile.ordine_province" maxlength="2" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Numero Ordine</label><input x-model="profile.ordine_number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div><label class="block text-sm font-medium text-slate-600 mb-1">Max Distanza (km)</label><input x-model.number="profile.max_distance_km" type="number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
-                                <div class="flex items-center gap-4 md:col-span-2">
-                                    <label class="flex items-center gap-2 text-sm"><input x-model="profile.has_own_vehicle" type="checkbox"> Veicolo proprio</label>
-                                    <label class="flex items-center gap-2 text-sm"><input x-model="profile.willing_to_relocate" type="checkbox"> Disponibile a trasferirsi</label>
-                                    <label class="flex items-center gap-2 text-sm"><input x-model="profile.willing_overnight_stay" type="checkbox"> Disponibile per notti</label>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <button type="submit" :disabled="saving" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="saving ? 'Salvataggio...' : 'Salva Profilo'"></button>
-                                </div>
-                            </form>
+                            <!-- Tabs -->
+                            <div class="flex gap-2 mb-4">
+                                <button @click="tab = 'dati'" :class="tab === 'dati' ? 'bg-blue-600 text-white' : 'bg-white'" class="px-4 py-2 rounded-lg text-sm font-medium border">Dati Personali</button>
+                                <button @click="tab = 'preferenze'" :class="tab === 'preferenze' ? 'bg-blue-600 text-white' : 'bg-white'" class="px-4 py-2 rounded-lg text-sm font-medium border">Preferenze Turno</button>
+                            </div>
+                            <!-- Tab: Dati Personali -->
+                            <div x-show="tab === 'dati'" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <form @submit.prevent="save()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Nome</label><input x-model="profile.first_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Cognome</label><input x-model="profile.last_name" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Telefono</label><input x-model="profile.phone" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Data di Nascita</label><input x-model="profile.birth_date" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-600 mb-1">Indirizzo Residenza</label><input x-model="profile.residence_address" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Citta Domicilio</label><input x-model="profile.domicile_city" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Provincia Ordine</label><input x-model="profile.ordine_province" maxlength="2" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Numero Ordine</label><input x-model="profile.ordine_number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Max Distanza (km)</label><input x-model.number="profile.max_distance_km" type="number" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div class="flex items-center gap-4 md:col-span-2">
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="profile.has_own_vehicle" type="checkbox"> Veicolo proprio</label>
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="profile.willing_to_relocate" type="checkbox"> Disponibile a trasferirsi</label>
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="profile.willing_overnight_stay" type="checkbox"> Disponibile per notti</label>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <button type="submit" :disabled="saving" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="saving ? 'Salvataggio...' : 'Salva Profilo'"></button>
+                                    </div>
+                                </form>
+                            </div>
+                            <!-- Tab: Preferenze Turno -->
+                            <div x-show="tab === 'preferenze'" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <form @submit.prevent="savePreferences()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="md:col-span-2">
+                                        <p class="text-sm text-slate-500 mb-3">Indica le tue preferenze per l'assegnazione dei turni. Queste informazioni vengono usate per il ranking.</p>
+                                    </div>
+                                    <div class="md:col-span-2 flex flex-wrap gap-4">
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="preferences.prefers_day" type="checkbox"> Preferisce turni diurni</label>
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="preferences.prefers_night" type="checkbox"> Preferisce turni notturni</label>
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="preferences.prefers_weekends" type="checkbox"> Preferisce fine settimana</label>
+                                        <label class="flex items-center gap-2 text-sm"><input x-model="preferences.avoids_weekends" type="checkbox"> Evita fine settimana</label>
+                                    </div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Paga minima per turno (EUR)</label><input x-model.number="preferences.min_pay_per_shift" type="number" step="10" min="0" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. 300"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Distanza massima preferita (km)</label><input x-model.number="preferences.max_preferred_distance_km" type="number" min="0" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. 50"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Tipi struttura preferiti</label><input x-model="preferences.preferred_institution_types" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. pronto_soccorso, guardia_medica"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Livelli codice preferiti</label><input x-model="preferences.preferred_code_levels" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. WHITE, GREEN"></div>
+                                    <div class="md:col-span-2">
+                                        <button type="submit" :disabled="savingPrefs" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingPrefs ? 'Salvataggio...' : 'Salva Preferenze'"></button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </template>
+                </div>
+            </template>
+
+            <!-- ==================== DISPONIBILITA MEDICO ==================== -->
+            <template x-if="page === 'disponibilita'">
+                <div x-data="availabilityPage()">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">La Mia Disponibilita</h2>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Calendar column -->
+                        <div class="lg:col-span-2 space-y-4">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                <!-- Month navigation -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <button @click="prevMonth()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                    </button>
+                                    <h3 class="text-lg font-semibold text-slate-800 capitalize" x-text="monthName"></h3>
+                                    <button @click="nextMonth()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </button>
+                                </div>
+                                <!-- Day headers -->
+                                <div class="grid grid-cols-7 gap-1 mb-1">
+                                    <template x-for="d in ['Lun','Mar','Mer','Gio','Ven','Sab','Dom']">
+                                        <div class="text-xs font-medium text-slate-400 text-center py-1" x-text="d"></div>
+                                    </template>
+                                </div>
+                                <!-- Calendar grid -->
+                                <div class="grid grid-cols-7 gap-1">
+                                    <template x-for="(cell, idx) in calendarDays" :key="idx">
+                                        <div>
+                                            <template x-if="!cell">
+                                                <div class="aspect-square"></div>
+                                            </template>
+                                            <template x-if="cell">
+                                                <div @click="selectDate(cell.dateStr)"
+                                                     class="aspect-square p-1 text-center text-sm rounded-lg cursor-pointer hover:bg-slate-100 relative flex flex-col items-center justify-center"
+                                                     :class="{
+                                                         'ring-2 ring-blue-500': isToday(cell.dateStr),
+                                                         'bg-blue-50': selectedDate === cell.dateStr,
+                                                     }">
+                                                    <span x-text="cell.day" class="text-slate-700"></span>
+                                                    <div x-show="dayDotColor(cell.dateStr)" class="w-1.5 h-1.5 rounded-full mt-0.5" :class="dayDotColor(cell.dateStr)"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                <!-- Legend -->
+                                <div class="flex gap-4 mt-3 text-xs text-slate-500">
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Disponibile</span>
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Preferito</span>
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Riluttante</span>
+                                </div>
+                            </div>
+
+                            <!-- Selected day detail -->
+                            <template x-if="selectedDate">
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-semibold text-slate-800" x-text="new Date(selectedDate + 'T00:00:00').toLocaleDateString('it-IT', {weekday: 'long', day: 'numeric', month: 'long'})"></h4>
+                                        <button @click="openAddForDate(selectedDate)" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                                    </div>
+                                    <template x-if="entriesForDate(selectedDate).length === 0">
+                                        <p class="text-sm text-slate-400">Nessuna disponibilita per questo giorno</p>
+                                    </template>
+                                    <div class="space-y-2">
+                                        <template x-for="entry in entriesForDate(selectedDate)" :key="entry.id">
+                                            <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                                                <div class="flex items-center gap-2">
+                                                    <span :class="typeColor(entry.availability_type)" class="badge" x-text="typeLabel(entry.availability_type)"></span>
+                                                    <span class="text-sm text-slate-600" x-text="formatTime(entry.start_time) + ' - ' + formatTime(entry.end_time)"></span>
+                                                </div>
+                                                <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600 text-xs">Elimina</button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Add availability form -->
+                            <template x-if="showAddForm">
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                    <h4 class="font-semibold text-slate-800 mb-3">Aggiungi Disponibilita</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                                        <div><label class="block text-xs text-slate-500 mb-1">Data</label><input x-model="addDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Ora Inizio</label><input x-model="addStartTime" type="time" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Ora Fine</label><input x-model="addEndTime" type="time" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Tipo</label>
+                                            <select x-model="addType" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                                <option value="available">Disponibile</option>
+                                                <option value="preferred">Preferito</option>
+                                                <option value="reluctant">Riluttante</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button @click="addAvailability()" :disabled="savingAvail" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingAvail ? 'Salvataggio...' : 'Salva'"></button>
+                                        <button @click="showAddForm = false" class="px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-600">Annulla</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Unavailability column -->
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold text-slate-800">Indisponibilita</h3>
+                                    <button @click="showUnavForm = !showUnavForm" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                                </div>
+                                <!-- Add unavailability form -->
+                                <div x-show="showUnavForm" class="mb-4 p-3 bg-slate-50 rounded-lg space-y-2">
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Inizio</label><input x-model="unavStartDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Fine</label><input x-model="unavEndDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Motivo</label>
+                                        <select x-model="unavReason" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="vacation">Ferie</option>
+                                            <option value="sick_leave">Malattia</option>
+                                            <option value="personal">Personale</option>
+                                            <option value="training">Formazione</option>
+                                            <option value="other">Altro</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button @click="addUnavailability()" :disabled="savingUnav" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingUnav ? 'Salvataggio...' : 'Salva'"></button>
+                                        <button @click="showUnavForm = false" class="px-3 py-1.5 bg-slate-100 rounded-lg text-xs text-slate-600">Annulla</button>
+                                    </div>
+                                </div>
+                                <!-- Unavailability list -->
+                                <div class="space-y-2">
+                                    <template x-for="unav in unavailabilities" :key="unav.id">
+                                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                            <div>
+                                                <div class="text-sm font-medium text-slate-700" x-text="new Date(unav.start_date + 'T00:00:00').toLocaleDateString('it-IT') + ' - ' + new Date(unav.end_date + 'T00:00:00').toLocaleDateString('it-IT')"></div>
+                                                <span :class="reasonColor(unav.reason)" class="badge text-xs mt-1" x-text="reasonLabel(unav.reason)"></span>
+                                            </div>
+                                            <button @click="deleteUnavailability(unav.id)" class="text-red-400 hover:text-red-600 text-xs">Elimina</button>
+                                        </div>
+                                    </template>
+                                    <div x-show="unavailabilities.length === 0" class="text-center py-4 text-sm text-slate-400">Nessun periodo registrato</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== QUALIFICHE MEDICO ==================== -->
+            <template x-if="page === 'qualifiche'">
+                <div x-data="qualificationsPage()">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Le Mie Qualifiche</h2>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <div x-show="!loading" class="space-y-6">
+                        <!-- Certifications section -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-slate-800">Certificazioni</h3>
+                                <button @click="showAddCert = !showAddCert" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                            </div>
+                            <!-- Add cert form -->
+                            <div x-show="showAddCert" class="mb-4 p-4 bg-slate-50 rounded-lg">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Tipo Certificazione</label>
+                                        <select x-model="newCertTypeId" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <template x-for="t in filteredCertTypes" :key="t.id">
+                                                <option :value="t.id" x-text="t.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Ottenimento</label><input x-model="newCertObtainedDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm" required></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Scadenza</label><input x-model="newCertExpiryDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="addCertification()" :disabled="savingCert || !newCertTypeId || !newCertObtainedDate" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingCert ? 'Salvataggio...' : 'Aggiungi'"></button>
+                                    <button @click="showAddCert = false" class="px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-600">Annulla</button>
+                                </div>
+                            </div>
+                            <!-- Cert list -->
+                            <div class="space-y-2">
+                                <template x-for="cert in certifications" :key="cert.id">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div>
+                                            <div class="font-medium text-sm text-slate-800" x-text="cert.certification_type?.name || 'Certificazione'"></div>
+                                            <div class="text-xs text-slate-500">
+                                                <span x-text="'Ottenuta: ' + cert.obtained_date"></span>
+                                                <span x-show="cert.expiry_date" x-text="' - Scade: ' + cert.expiry_date"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span :class="certStatusColor(cert)" class="badge" x-text="certStatusLabel(cert)"></span>
+                                            <button @click="removeCertification(cert.certification_type_id)" class="text-red-400 hover:text-red-600 text-xs">Rimuovi</button>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="certifications.length === 0" class="text-center py-4 text-sm text-slate-400">Nessuna certificazione registrata</div>
+                            </div>
+                        </div>
+
+                        <!-- Languages section -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-slate-800">Lingue</h3>
+                                <button @click="showAddLang = !showAddLang" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                            </div>
+                            <!-- Add language form -->
+                            <div x-show="showAddLang" class="mb-4 p-4 bg-slate-50 rounded-lg">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Lingua</label>
+                                        <select x-model="newLangId" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <template x-for="l in filteredLangs" :key="l.id">
+                                                <option :value="l.id" x-text="l.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 mb-1">Livello (<span x-text="proficiencyLabel(newLangProficiency)"></span>)</label>
+                                        <input x-model.number="newLangProficiency" type="range" min="1" max="5" step="1" class="w-full mt-2">
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="addLanguage()" :disabled="savingLang || !newLangId" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingLang ? 'Salvataggio...' : 'Aggiungi'"></button>
+                                    <button @click="showAddLang = false" class="px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-600">Annulla</button>
+                                </div>
+                            </div>
+                            <!-- Language list -->
+                            <div class="space-y-2">
+                                <template x-for="lang in languages" :key="lang.id">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-medium text-sm text-slate-800" x-text="lang.language?.name || 'Lingua'"></span>
+                                            <div class="flex gap-0.5">
+                                                <template x-for="i in 5" :key="i">
+                                                    <span class="w-2 h-2 rounded-full" :class="i <= lang.proficiency_level ? 'bg-blue-600' : 'bg-slate-200'"></span>
+                                                </template>
+                                            </div>
+                                            <span class="text-xs text-slate-500" x-text="proficiencyLabel(lang.proficiency_level)"></span>
+                                        </div>
+                                        <button @click="removeLanguage(lang.language_id)" class="text-red-400 hover:text-red-600 text-xs">Rimuovi</button>
+                                    </div>
+                                </template>
+                                <div x-show="languages.length === 0" class="text-center py-4 text-sm text-slate-400">Nessuna lingua registrata</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </template>
 
@@ -1118,6 +1412,8 @@
 <script src="/static/js/pages/my_offers.js"></script>
 <script src="/static/js/pages/offers.js"></script>
 <script src="/static/js/pages/notifications.js"></script>
+<script src="/static/js/pages/availability.js"></script>
+<script src="/static/js/pages/qualifications.js"></script>
 <script src="/static/js/pages/analytics.js"></script>
 <script src="/static/js/pages/dashboard.js"></script>
 <script src="/static/js/pages/doctors.js"></script>

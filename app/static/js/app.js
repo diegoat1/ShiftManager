@@ -36,6 +36,8 @@ document.addEventListener('alpine:init', () => {
                 '#/strutture': 'strutture',
                 '#/calendario': 'calendario',
                 '#/profilo': 'profilo',
+                '#/disponibilita': 'disponibilita',
+                '#/qualifiche': 'qualifiche',
                 '#/documenti': 'documenti',
                 '#/mie-offerte': 'mie-offerte',
                 '#/admin/documenti': 'admin-documenti',

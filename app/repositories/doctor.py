@@ -72,3 +72,40 @@ class DoctorRepository(BaseRepository[Doctor]):
             await self.session.flush()
             return True
         return False
+
+    async def get_certifications(self, doctor_id: uuid.UUID) -> list[DoctorCertification]:
+        stmt = (
+            select(DoctorCertification)
+            .options(selectinload(DoctorCertification.certification_type))
+            .where(DoctorCertification.doctor_id == doctor_id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_languages(self, doctor_id: uuid.UUID) -> list[DoctorLanguage]:
+        stmt = (
+            select(DoctorLanguage)
+            .options(selectinload(DoctorLanguage.language))
+            .where(DoctorLanguage.doctor_id == doctor_id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_preferences(self, doctor_id: uuid.UUID) -> DoctorPreference | None:
+        stmt = select(DoctorPreference).where(DoctorPreference.doctor_id == doctor_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def upsert_preferences(self, doctor_id: uuid.UUID, **kwargs) -> DoctorPreference:
+        existing = await self.get_preferences(doctor_id)
+        if existing:
+            for key, value in kwargs.items():
+                setattr(existing, key, value)
+            await self.session.flush()
+            await self.session.refresh(existing)
+            return existing
+        pref = DoctorPreference(doctor_id=doctor_id, **kwargs)
+        self.session.add(pref)
+        await self.session.flush()
+        await self.session.refresh(pref)
+        return pref

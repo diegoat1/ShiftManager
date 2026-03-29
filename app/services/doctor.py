@@ -4,9 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
-from app.models.doctor import CertificationType, Doctor, Language
+from app.models.doctor import CertificationType, Doctor, DoctorPreference, Language
 from app.repositories.doctor import DoctorRepository
-from app.schemas.doctor import CertificationCreate, DoctorCreate, DoctorLanguageCreate, DoctorUpdate
+from app.schemas.doctor import CertificationCreate, DoctorCreate, DoctorLanguageCreate, DoctorPreferenceCreate, DoctorUpdate
 
 
 class DoctorService:
@@ -121,3 +121,17 @@ class DoctorService:
         result = await self.repo.remove_language(doctor_id, language_id)
         await self.session.commit()
         return result
+
+    async def get_certifications(self, doctor_id: uuid.UUID):
+        return await self.repo.get_certifications(doctor_id)
+
+    async def get_languages(self, doctor_id: uuid.UUID):
+        return await self.repo.get_languages(doctor_id)
+
+    async def get_preferences(self, doctor_id: uuid.UUID) -> DoctorPreference | None:
+        return await self.repo.get_preferences(doctor_id)
+
+    async def upsert_preferences(self, doctor_id: uuid.UUID, data: DoctorPreferenceCreate) -> DoctorPreference:
+        pref = await self.repo.upsert_preferences(doctor_id, **data.model_dump())
+        await self.session.commit()
+        return pref

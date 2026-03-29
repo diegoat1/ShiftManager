@@ -72,6 +72,9 @@ class AvailabilityRepository(BaseRepository[DoctorAvailability]):
         return created
 
     # Unavailability
+    async def get_unavailability_by_id(self, id: int) -> DoctorUnavailability | None:
+        return await self.session.get(DoctorUnavailability, id)
+
     async def create_unavailability(self, doctor_id: uuid.UUID, **kwargs) -> DoctorUnavailability:
         unav = DoctorUnavailability(doctor_id=doctor_id, **kwargs)
         self.session.add(unav)

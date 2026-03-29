@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.security import decode_access_token, oauth2_scheme
+from app.models.doctor import Doctor
 from app.models.user import User
+from app.repositories.doctor import DoctorRepository
 from app.repositories.user import UserRepository
 from app.services.analytics import AnalyticsService
 from app.services.assignment import AssignmentService
@@ -80,6 +82,32 @@ def require_role(*roles: UserRole):
 
 ADMIN_ROLES = (UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.COORDINATORE)
 RequireAdmin = Annotated[User, Depends(require_role(UserRole.SUPERADMIN, UserRole.ADMIN, UserRole.COORDINATORE))]
+
+
+async def get_current_doctor(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Doctor:
+    role_value = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    if role_value != UserRole.MEDICO.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only doctors can access this resource",
+        )
+    from sqlalchemy import select
+    result = await session.execute(select(Doctor).where(Doctor.user_id == user.id))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Doctor profile not found",
+        )
+    repo = DoctorRepository(session)
+    doctor = await repo.get_with_relations(doc.id)
+    return doctor
+
+
+CurrentDoctor = Annotated[Doctor, Depends(get_current_doctor)]
 
 
 # --- Service factories ---

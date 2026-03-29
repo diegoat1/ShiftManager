@@ -12,8 +12,11 @@ from app.api import (
     institutions,
     lookups,
     me,
+    me_availability,
+    me_certifications,
     me_notifications,
     me_offers,
+    me_preferences,
     offers,
     shifts,
 )
@@ -27,6 +30,9 @@ api_router.include_router(availability.router)
 api_router.include_router(assignments.router)
 api_router.include_router(lookups.router)
 api_router.include_router(me.router)
+api_router.include_router(me_availability.router)
+api_router.include_router(me_certifications.router)
+api_router.include_router(me_preferences.router)
 api_router.include_router(documents.router)
 api_router.include_router(admin_documents.router)
 api_router.include_router(me_offers.router)
