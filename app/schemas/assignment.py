@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -20,6 +20,54 @@ class AssignmentRead(BaseModel):
     pay_amount: float
     assigned_at: datetime
     responded_at: datetime | None
+
+
+class MyAssignmentRead(BaseModel):
+    id: uuid.UUID
+    shift_id: uuid.UUID
+    status: AssignmentStatus
+    pay_amount: float | None = None
+    assigned_at: datetime
+    shift_date: date
+    start_datetime: datetime
+    end_datetime: datetime
+    duration_hours: float
+    shift_type: str | None = None
+    is_night: bool = False
+    site_name: str | None = None
+    site_city: str | None = None
+    institution_name: str | None = None
+    source: str | None = None
+
+
+class CandidatureCreate(BaseModel):
+    shift_id: uuid.UUID
+
+
+class AvailableShiftRead(BaseModel):
+    id: uuid.UUID
+    site_id: uuid.UUID
+    date: date
+    start_datetime: datetime
+    end_datetime: datetime
+    required_doctors: int
+    status: str
+    base_pay: float
+    urgent_multiplier: float
+    is_night: bool
+    shift_type: str | None = None
+    min_years_experience: int = 0
+    requires_independent_work: bool = False
+    requires_emergency_vehicle: bool = False
+    site_name: str | None = None
+    site_city: str | None = None
+    institution_name: str | None = None
+    institution_type: str | None = None
+    eligibility: "EligibilityResult"
+    score: int = 0
+    score_breakdown: "ScoreBreakdownRead | None" = None
+    already_applied: bool = False
+    has_pending_offer: bool = False
 
 
 class EligibilityResult(BaseModel):
@@ -61,3 +109,7 @@ class ScoredEligibleDoctorRead(BaseModel):
     years_experience: int = 0
     can_work_alone: bool = False
     can_emergency_vehicle: bool = False
+
+
+# Resolve forward references
+AvailableShiftRead.model_rebuild()

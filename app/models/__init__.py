@@ -10,6 +10,7 @@ from app.models.offer import ShiftOffer
 from app.models.notification import Notification
 from app.models.audit import AuditLog
 from app.models.reliability import DoctorReliabilityStats
+from app.models.message import Message
 
 __all__ = [
     "User",
@@ -24,4 +25,5 @@ __all__ = [
     "Notification",
     "AuditLog",
     "DoctorReliabilityStats",
+    "Message",
 ]

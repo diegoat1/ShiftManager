@@ -4,8 +4,10 @@ from typing import Sequence
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.assignment import ShiftAssignment
+from app.models.institution import InstitutionSite
 from app.models.shift import Shift
 from app.repositories.base import BaseRepository
 from app.utils.enums import AssignmentStatus
@@ -38,6 +40,36 @@ class AssignmentRepository(BaseRepository[ShiftAssignment]):
             stmt = stmt.where(Shift.end_datetime <= end)
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def get_by_doctor_with_details(
+        self,
+        doctor_id: uuid.UUID,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        statuses: list[AssignmentStatus] | None = None,
+        limit: int | None = None,
+    ) -> Sequence[ShiftAssignment]:
+        stmt = (
+            select(ShiftAssignment)
+            .join(Shift)
+            .options(
+                selectinload(ShiftAssignment.shift)
+                .selectinload(Shift.site)
+                .selectinload(InstitutionSite.institution)
+            )
+            .where(ShiftAssignment.doctor_id == doctor_id)
+        )
+        if statuses:
+            stmt = stmt.where(ShiftAssignment.status.in_(statuses))
+        if start:
+            stmt = stmt.where(Shift.start_datetime >= start)
+        if end:
+            stmt = stmt.where(Shift.end_datetime <= end)
+        stmt = stmt.order_by(Shift.start_datetime.asc())
+        if limit:
+            stmt = stmt.limit(limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().unique().all()
 
     async def get_existing(self, shift_id: uuid.UUID, doctor_id: uuid.UUID) -> ShiftAssignment | None:
         result = await self.session.execute(

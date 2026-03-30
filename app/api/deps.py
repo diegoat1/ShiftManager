@@ -12,6 +12,7 @@ from app.models.user import User
 from app.repositories.doctor import DoctorRepository
 from app.repositories.user import UserRepository
 from app.services.analytics import AnalyticsService
+from app.services.message import MessageService
 from app.services.assignment import AssignmentService
 from app.services.audit import AuditService
 from app.services.auth import AuthService
@@ -158,3 +159,7 @@ async def get_reliability_service(session: DbSession) -> ReliabilityService:
 
 async def get_analytics_service(session: DbSession) -> AnalyticsService:
     return AnalyticsService(session)
+
+
+async def get_message_service(session: DbSession) -> MessageService:
+    return MessageService(session)

@@ -51,6 +51,7 @@ class Doctor(TimestampMixin, Base):
     ordine_number: Mapped[str | None] = mapped_column(String(20), default=None)
     has_own_vehicle: Mapped[bool] = mapped_column(default=False)
     profile_completion_percent: Mapped[int] = mapped_column(default=0)
+    calendar_feed_token: Mapped[str | None] = mapped_column(String(64), unique=True, default=None)
 
     user: Mapped["User | None"] = relationship(back_populates="doctor", foreign_keys=[user_id])
     certifications: Mapped[list["DoctorCertification"]] = relationship(back_populates="doctor", cascade="all, delete-orphan")

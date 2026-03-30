@@ -12,8 +12,13 @@ from app.api import (
     institutions,
     lookups,
     me,
+    me_assignments,
     me_availability,
+    me_calendar_ics,
+    me_candidature,
+    me_messages,
     me_certifications,
+    me_dashboard,
     me_notifications,
     me_offers,
     me_preferences,
@@ -30,7 +35,12 @@ api_router.include_router(availability.router)
 api_router.include_router(assignments.router)
 api_router.include_router(lookups.router)
 api_router.include_router(me.router)
+api_router.include_router(me_assignments.router)
+api_router.include_router(me_dashboard.router)
 api_router.include_router(me_availability.router)
+api_router.include_router(me_candidature.router)
+api_router.include_router(me_calendar_ics.router)
+api_router.include_router(me_messages.router)
 api_router.include_router(me_certifications.router)
 api_router.include_router(me_preferences.router)
 api_router.include_router(documents.router)

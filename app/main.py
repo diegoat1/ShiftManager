@@ -38,4 +38,18 @@ async def root():
     return FileResponse(str(_static / "index.html"))
 
 
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse(
+        str(_static / "sw.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"},
+    )
+
+
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse(str(_static / "manifest.json"), media_type="application/manifest+json")
+
+
 app.mount("/static", StaticFiles(directory=str(_static)), name="static")

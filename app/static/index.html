@@ -2,7 +2,12 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1E293B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <title>ShiftManager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
@@ -10,6 +15,13 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 <div x-data="{ get page() { return $store.app.page }, sidebarOpen: false }">
+
+    <!-- Toast container -->
+    <div class="toast-container">
+        <template x-for="t in $store.app.toasts" :key="t.id">
+            <div class="toast" :class="'toast-' + t.type" x-text="t.message" @click="$store.app.toasts = $store.app.toasts.filter(x => x.id !== t.id)"></div>
+        </template>
+    </div>
 
     <!-- ==================== LOGIN PAGE ==================== -->
     <template x-if="page === 'login' || page === 'register'">
@@ -84,6 +96,15 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                 Dashboard
             </a>
+            <a href="#/messaggi" @click="sidebarOpen = false"
+               :class="page === 'messaggi' ? 'active' : 'hover:bg-slate-700'"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                Messaggi
+                <span x-show="$store.app.unreadMessages > 0"
+                      class="ml-auto w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
+                      x-text="$store.app.unreadMessages"></span>
+            </a>
             <!-- Admin nav -->
             <template x-if="$store.app.isAdmin()">
                 <div class="space-y-1">
@@ -128,29 +149,47 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         Profilo
                     </a>
+                    <a href="#/turni-disponibili" @click="sidebarOpen = false"
+                       :class="page === 'turni-disponibili' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        Turni Disponibili
+                    </a>
+                    <a href="#/miei-turni" @click="sidebarOpen = false"
+                       :class="page === 'miei-turni' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        I Miei Turni
+                    </a>
                     <a href="#/disponibilita" @click="sidebarOpen = false"
                        :class="page === 'disponibilita' ? 'active' : 'hover:bg-slate-700'"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Disponibilita
                     </a>
-                    <a href="#/qualifiche" @click="sidebarOpen = false"
-                       :class="page === 'qualifiche' ? 'active' : 'hover:bg-slate-700'"
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        Qualifiche
-                    </a>
-                    <a href="#/documenti" @click="sidebarOpen = false"
-                       :class="page === 'documenti' ? 'active' : 'hover:bg-slate-700'"
+                    <a href="#/documentazione" @click="sidebarOpen = false"
+                       :class="page === 'documentazione' || page === 'qualifiche' || page === 'documenti' ? 'active' : 'hover:bg-slate-700'"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        Documenti
+                        Documentazione
+                        <span x-show="$store.app.expiringCertsCount + $store.app.missingDocsCount > 0"
+                              class="ml-auto w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
+                              x-text="$store.app.expiringCertsCount + $store.app.missingDocsCount"></span>
                     </a>
                     <a href="#/mie-offerte" @click="sidebarOpen = false"
                        :class="page === 'mie-offerte' ? 'active' : 'hover:bg-slate-700'"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Offerte
+                        <span x-show="$store.app.pendingOffersCount > 0"
+                              class="ml-auto w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
+                              x-text="$store.app.pendingOffersCount"></span>
+                    </a>
+                    <a href="#/storico" @click="sidebarOpen = false"
+                       :class="page === 'storico' ? 'active' : 'hover:bg-slate-700'"
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Storico
                     </a>
                 </div>
             </template>
@@ -172,68 +211,190 @@
             <!-- ==================== DASHBOARD ==================== -->
             <template x-if="page === 'dashboard'">
                 <div x-data="dashboardPage">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Dashboard</h2>
-
                     <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
 
-                    <div x-show="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-sm text-slate-500 mb-1">Medici Attivi</div>
-                            <div class="text-3xl font-bold text-blue-600" x-text="stats.doctors"></div>
-                        </div>
-                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-sm text-slate-500 mb-1">Istituzioni</div>
-                            <div class="text-3xl font-bold text-teal-600" x-text="stats.institutions"></div>
-                        </div>
-                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-sm text-slate-500 mb-1">Turni del Mese</div>
-                            <div class="text-3xl font-bold text-slate-800" x-text="stats.shiftsThisMonth"></div>
-                        </div>
-                        <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
-                            <div class="text-sm text-slate-500 mb-1">Turni da Assegnare</div>
-                            <div class="text-3xl font-bold text-amber-500" x-text="stats.unassigned"></div>
-                        </div>
-                    </div>
-
-                    <!-- Incomplete shifts table -->
-                    <div x-show="!loading && incompleteShifts.length > 0" class="mb-6">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-3">Turni da Completare</h3>
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="data-table w-full text-sm">
-                                    <thead class="bg-slate-50 border-b border-slate-200">
-                                        <tr>
-                                            <th class="text-left px-4 py-3 font-medium text-slate-600">Sede</th>
-                                            <th class="text-left px-4 py-3 font-medium text-slate-600">Data</th>
-                                            <th class="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Tipo</th>
-                                            <th class="text-left px-4 py-3 font-medium text-slate-600">Stato</th>
-                                            <th class="text-left px-4 py-3 font-medium text-slate-600">Medici</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template x-for="s in incompleteShifts" :key="s.id">
-                                            <tr class="border-b border-slate-100">
-                                                <td class="px-4 py-3 font-medium" x-text="s.site_name"></td>
-                                                <td class="px-4 py-3 text-slate-600" x-text="new Date(s.start_datetime).toLocaleDateString('it-IT')"></td>
-                                                <td class="px-4 py-3 text-slate-600 hidden sm:table-cell" x-text="s.shift_type || 'Standard'"></td>
-                                                <td class="px-4 py-3">
-                                                    <span class="badge"
-                                                          :class="{'badge-blue': s.status === 'open', 'badge-yellow': s.status === 'partially_filled', 'badge-gray': s.status === 'draft'}"
-                                                          x-text="s.status === 'open' ? 'Aperto' : s.status === 'partially_filled' ? 'Parziale' : 'Bozza'"></span>
-                                                </td>
-                                                <td class="px-4 py-3 text-slate-600" x-text="(s.assigned || 0) + ' / ' + s.required_doctors"></td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
+                    <!-- ===== ADMIN DASHBOARD ===== -->
+                    <template x-if="!isDoctorView">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-6">Dashboard</h2>
+                            <div x-show="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                    <div class="text-sm text-slate-500 mb-1">Medici Attivi</div>
+                                    <div class="text-3xl font-bold text-blue-600" x-text="stats.doctors"></div>
+                                </div>
+                                <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                    <div class="text-sm text-slate-500 mb-1">Istituzioni</div>
+                                    <div class="text-3xl font-bold text-teal-600" x-text="stats.institutions"></div>
+                                </div>
+                                <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                    <div class="text-sm text-slate-500 mb-1">Turni del Mese</div>
+                                    <div class="text-3xl font-bold text-slate-800" x-text="stats.shiftsThisMonth"></div>
+                                </div>
+                                <div class="stat-card bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                    <div class="text-sm text-slate-500 mb-1">Turni da Assegnare</div>
+                                    <div class="text-3xl font-bold text-amber-500" x-text="stats.unassigned"></div>
+                                </div>
+                            </div>
+                            <div x-show="!loading && incompleteShifts.length > 0" class="mb-6">
+                                <h3 class="text-lg font-semibold text-slate-800 mb-3">Turni da Completare</h3>
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div class="overflow-x-auto">
+                                        <table class="data-table w-full text-sm">
+                                            <thead class="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="text-left px-4 py-3 font-medium text-slate-600">Sede</th>
+                                                    <th class="text-left px-4 py-3 font-medium text-slate-600">Data</th>
+                                                    <th class="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Tipo</th>
+                                                    <th class="text-left px-4 py-3 font-medium text-slate-600">Stato</th>
+                                                    <th class="text-left px-4 py-3 font-medium text-slate-600">Medici</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="s in incompleteShifts" :key="s.id">
+                                                    <tr class="border-b border-slate-100">
+                                                        <td class="px-4 py-3 font-medium" x-text="s.site_name"></td>
+                                                        <td class="px-4 py-3 text-slate-600" x-text="new Date(s.start_datetime).toLocaleDateString('it-IT')"></td>
+                                                        <td class="px-4 py-3 text-slate-600 hidden sm:table-cell" x-text="s.shift_type || 'Standard'"></td>
+                                                        <td class="px-4 py-3">
+                                                            <span class="badge"
+                                                                  :class="{'badge-blue': s.status === 'open', 'badge-yellow': s.status === 'partially_filled', 'badge-gray': s.status === 'draft'}"
+                                                                  x-text="s.status === 'open' ? 'Aperto' : s.status === 'partially_filled' ? 'Parziale' : 'Bozza'"></span>
+                                                        </td>
+                                                        <td class="px-4 py-3 text-slate-600" x-text="(s.assigned || 0) + ' / ' + s.required_doctors"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div x-show="!loading" class="flex gap-3">
+                                <a href="#/medici" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Vai a Medici</a>
+                                <a href="#/calendario" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">Vai al Calendario</a>
                             </div>
                         </div>
-                    </div>
+                    </template>
 
-                    <div x-show="!loading" class="flex gap-3">
-                        <a href="#/medici" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Vai a Medici</a>
-                        <a href="#/calendario" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">Vai al Calendario</a>
-                    </div>
+                    <!-- ===== DOCTOR DASHBOARD ===== -->
+                    <template x-if="isDoctorView">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-6">La Mia Dashboard</h2>
+
+                            <div x-show="doctorDashboardError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600" x-text="doctorDashboardError"></div>
+
+                            <div x-show="!loading && doctorDashboard" class="space-y-6">
+                                <!-- Stats cards -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                        <div class="text-sm text-slate-500 mb-1">Turni del Mese</div>
+                                        <div class="text-3xl font-bold text-blue-600" x-text="doctorDashboard.month_shifts_total"></div>
+                                    </div>
+                                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                        <div class="text-sm text-slate-500 mb-1">Ore Lavorate</div>
+                                        <div class="text-3xl font-bold text-teal-600" x-text="doctorDashboard.month_hours_worked.toFixed(1)"></div>
+                                    </div>
+                                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                        <div class="text-sm text-slate-500 mb-1">Offerte Pendenti</div>
+                                        <div class="text-3xl font-bold" :class="doctorDashboard.pending_offers_count > 0 ? 'text-amber-500' : 'text-slate-400'" x-text="doctorDashboard.pending_offers_count"></div>
+                                    </div>
+                                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                                        <div class="text-sm text-slate-500 mb-1">Profilo</div>
+                                        <div class="text-3xl font-bold text-slate-800" x-text="doctorDashboard.profile_completion_percent + '%'"></div>
+                                        <div class="mt-2 w-full bg-slate-200 rounded-full h-2">
+                                            <div class="bg-blue-600 h-2 rounded-full transition-all" :style="'width:' + doctorDashboard.profile_completion_percent + '%'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Upcoming assignments -->
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                    <h3 class="text-lg font-semibold text-slate-800 mb-3">Prossimi Turni</h3>
+                                    <template x-if="doctorDashboard.upcoming_assignments.length === 0">
+                                        <p class="text-sm text-slate-400">Nessun turno in programma</p>
+                                    </template>
+                                    <template x-if="doctorDashboard.upcoming_assignments.length > 0">
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full text-sm">
+                                                <thead class="bg-slate-50 border-b border-slate-200">
+                                                    <tr>
+                                                        <th class="text-left px-4 py-2 font-medium text-slate-600">Data</th>
+                                                        <th class="text-left px-4 py-2 font-medium text-slate-600">Orario</th>
+                                                        <th class="text-left px-4 py-2 font-medium text-slate-600">Sede</th>
+                                                        <th class="text-left px-4 py-2 font-medium text-slate-600">Stato</th>
+                                                        <th class="text-left px-4 py-2 font-medium text-slate-600">Compenso</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <template x-for="a in doctorDashboard.upcoming_assignments" :key="a.id">
+                                                        <tr class="border-b border-slate-100">
+                                                            <td class="px-4 py-2" x-text="fmtDate(a.start_datetime)"></td>
+                                                            <td class="px-4 py-2 text-slate-600" x-text="fmtTime(a.start_datetime) + ' - ' + fmtTime(a.end_datetime)"></td>
+                                                            <td class="px-4 py-2 font-medium" x-text="a.site_name || 'N/D'"></td>
+                                                            <td class="px-4 py-2"><span class="text-xs px-2 py-1 rounded-full font-medium" :class="statusColor(a.status)" x-text="statusLabel(a.status)"></span></td>
+                                                            <td class="px-4 py-2 text-slate-600" x-text="a.pay_amount ? '€' + a.pay_amount.toFixed(0) : '-'"></td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- Two columns: offers + alerts -->
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Pending offers -->
+                                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                        <h3 class="text-lg font-semibold text-slate-800 mb-3">Offerte Pendenti</h3>
+                                        <template x-if="doctorDashboard.pending_offers.length === 0">
+                                            <p class="text-sm text-slate-400">Nessuna offerta pendente</p>
+                                        </template>
+                                        <div class="space-y-3">
+                                            <template x-for="o in doctorDashboard.pending_offers" :key="o.id">
+                                                <div class="border border-slate-200 rounded-lg p-3">
+                                                    <div class="flex justify-between items-start mb-2">
+                                                        <div>
+                                                            <div class="font-medium text-sm" x-text="(o.site_name || 'Turno') + ' - ' + (o.shift_date || '')"></div>
+                                                            <div class="text-xs text-amber-600 mt-1" x-text="'Scade tra: ' + timeLeft(o.expires_at)"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-2">
+                                                        <button @click="acceptOffer(o.id)" class="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700">Accetta</button>
+                                                        <button @click="rejectOffer(o.id)" class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200">Rifiuta</button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Alerts -->
+                                    <div class="space-y-4">
+                                        <div x-show="doctorDashboard.expiring_certifications.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-5">
+                                            <h3 class="text-base font-semibold text-yellow-800 mb-3">Certificazioni in Scadenza</h3>
+                                            <div class="space-y-2">
+                                                <template x-for="c in doctorDashboard.expiring_certifications" :key="c.certification_name">
+                                                    <div class="flex justify-between text-sm">
+                                                        <span class="text-yellow-900" x-text="c.certification_name"></span>
+                                                        <span class="text-yellow-700" x-text="c.days_remaining + ' giorni'"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div x-show="doctorDashboard.missing_mandatory_docs.length > 0" class="bg-red-50 border border-red-200 rounded-xl p-5">
+                                            <h3 class="text-base font-semibold text-red-800 mb-3">Documenti Mancanti</h3>
+                                            <ul class="space-y-1">
+                                                <template x-for="d in doctorDashboard.missing_mandatory_docs" :key="d.document_type_id">
+                                                    <li class="text-sm text-red-700" x-text="d.document_type_name"></li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                        <div x-show="doctorDashboard.expiring_certifications.length === 0 && doctorDashboard.missing_mandatory_docs.length === 0" class="bg-green-50 border border-green-200 rounded-xl p-5">
+                                            <p class="text-sm text-green-700">Tutto in regola! Nessuna certificazione in scadenza e nessun documento mancante.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </template>
 
@@ -959,8 +1120,32 @@
                                     </div>
                                     <div><label class="block text-sm font-medium text-slate-600 mb-1">Paga minima per turno (EUR)</label><input x-model.number="preferences.min_pay_per_shift" type="number" step="10" min="0" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. 300"></div>
                                     <div><label class="block text-sm font-medium text-slate-600 mb-1">Distanza massima preferita (km)</label><input x-model.number="preferences.max_preferred_distance_km" type="number" min="0" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. 50"></div>
-                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Tipi struttura preferiti</label><input x-model="preferences.preferred_institution_types" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. pronto_soccorso, guardia_medica"></div>
-                                    <div><label class="block text-sm font-medium text-slate-600 mb-1">Livelli codice preferiti</label><input x-model="preferences.preferred_code_levels" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Es. WHITE, GREEN"></div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 mb-2">Tipi struttura preferiti</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <template x-for="opt in institutionTypeOptions" :key="opt.value">
+                                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                                    <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                           :checked="selectedInstitutionTypes.includes(opt.value)"
+                                                           @change="toggleInstitutionType(opt.value)">
+                                                    <span x-text="opt.label"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 mb-2">Livelli codice preferiti</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <template x-for="cl in codeLevelOptions" :key="cl.id">
+                                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                                    <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                           :checked="selectedCodeLevels.includes(cl.code)"
+                                                           @change="toggleCodeLevel(cl.code)">
+                                                    <span x-text="cl.code + (cl.description ? ' - ' + cl.description : '')"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </div>
                                     <div class="md:col-span-2">
                                         <button type="submit" :disabled="savingPrefs" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingPrefs ? 'Salvataggio...' : 'Salva Preferenze'"></button>
                                     </div>
@@ -971,86 +1156,558 @@
                 </div>
             </template>
 
+            <!-- ==================== TURNI DISPONIBILI (AUTO-CANDIDATURA P4) ==================== -->
+            <template x-if="page === 'turni-disponibili'">
+                <div x-data="availableShiftsPage">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Turni Disponibili</h2>
+
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-3 mb-6 items-end">
+                        <div><label class="block text-xs text-slate-500 mb-1">Da</label><input type="date" x-model="filterStart" class="px-3 py-2 border rounded-lg text-sm"></div>
+                        <div><label class="block text-xs text-slate-500 mb-1">A</label><input type="date" x-model="filterEnd" class="px-3 py-2 border rounded-lg text-sm"></div>
+                        <div><label class="block text-xs text-slate-500 mb-1">Tipo struttura</label>
+                            <select x-model="filterType" class="px-3 py-2 border rounded-lg text-sm">
+                                <option value="">Tutti</option>
+                                <template x-for="t in institutionTypes" :key="t.value"><option :value="t.value" x-text="t.label"></option></template>
+                            </select>
+                        </div>
+                        <div><label class="block text-xs text-slate-500 mb-1">Turno</label>
+                            <select x-model="filterNight" class="px-3 py-2 border rounded-lg text-sm">
+                                <option value="">Tutti</option>
+                                <option value="day">Diurno</option>
+                                <option value="night">Notturno</option>
+                            </select>
+                        </div>
+                        <button @click="load()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Cerca</button>
+                    </div>
+
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <!-- Empty state -->
+                    <template x-if="!loading && shifts.length === 0">
+                        <div class="text-center py-16">
+                            <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <p class="text-slate-400 text-sm">Nessun turno disponibile per i filtri selezionati</p>
+                        </div>
+                    </template>
+
+                    <!-- Shift cards -->
+                    <div x-show="!loading && shifts.length > 0" class="space-y-3">
+                        <p class="text-sm text-slate-500 mb-2" x-text="shifts.length + ' turni trovati'"></p>
+                        <template x-for="s in shifts" :key="s.id">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <!-- Shift info -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                            <span class="font-semibold text-sm text-slate-800" x-text="s.site_name || 'N/D'"></span>
+                                            <span x-show="s.is_night" class="badge badge-purple text-xs">Notte</span>
+                                            <span x-show="s.institution_type" class="badge badge-gray text-xs" x-text="institutionLabel(s.institution_type)"></span>
+                                        </div>
+                                        <div class="text-sm text-slate-600" x-text="(s.institution_name || '') + (s.site_city ? ' - ' + s.site_city : '')"></div>
+                                        <div class="text-sm text-slate-500 mt-1">
+                                            <span x-text="fmtDate(s.start_datetime)"></span> &middot;
+                                            <span x-text="fmtTime(s.start_datetime) + ' - ' + fmtTime(s.end_datetime)"></span> &middot;
+                                            <span class="font-medium" x-text="fmtPay(s)"></span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-1 mt-2 text-xs">
+                                            <span x-show="s.min_years_experience > 0" class="badge badge-gray" x-text="s.min_years_experience + '+ anni esp.'"></span>
+                                            <span x-show="s.requires_independent_work" class="badge badge-gray">Lavoro autonomo</span>
+                                            <span x-show="s.requires_emergency_vehicle" class="badge badge-gray">Mezzo emergenza</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Score + action -->
+                                    <div class="flex items-center gap-4 shrink-0">
+                                        <div class="text-center" x-show="s.eligibility.is_eligible">
+                                            <div class="text-xs text-slate-400">Punteggio</div>
+                                            <div class="text-xl font-bold" :class="scoreColor(s.score)" x-text="s.score"></div>
+                                        </div>
+
+                                        <!-- Eligible: can apply -->
+                                        <div x-show="s.eligibility.is_eligible && !s.already_applied && !s.has_pending_offer">
+                                            <button @click="apply(s.id)" :disabled="applying === s.id"
+                                                class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+                                                x-text="applying === s.id ? 'Invio...' : 'Candidati'"></button>
+                                        </div>
+
+                                        <!-- Already applied -->
+                                        <div x-show="s.already_applied" class="badge badge-yellow text-xs whitespace-nowrap">Gia candidato</div>
+
+                                        <!-- Has pending offer -->
+                                        <div x-show="s.has_pending_offer" class="badge badge-blue text-xs whitespace-nowrap">Offerta pendente</div>
+
+                                        <!-- Not eligible -->
+                                        <div x-show="!s.eligibility.is_eligible && !s.already_applied && !s.has_pending_offer"
+                                             class="text-xs text-red-500 max-w-[200px]">
+                                            <div class="flex items-center gap-1 mb-1">
+                                                <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <span class="font-medium">Non idoneo</span>
+                                            </div>
+                                            <template x-for="r in s.eligibility.reasons.slice(0, 2)" :key="r">
+                                                <div class="text-red-400 truncate" x-text="r"></div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== I MIEI TURNI (CALENDARIO PERSONALE) ==================== -->
+            <template x-if="page === 'miei-turni'">
+                <div x-data="myCalendarPage" x-init="init()" @remove="destroy()">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">I Miei Turni</h2>
+                        <div x-data="{ showIcal: false, icalUrl: '', loadingToken: false }">
+                            <button @click="async () => {
+                                loadingToken = true;
+                                try {
+                                    let res = await API.get('/me/calendar-token');
+                                    if (!res.token) { res = await API.post('/me/calendar-token'); }
+                                    icalUrl = window.location.origin + '/api/v1/me/calendar.ics?token=' + res.token;
+                                    showIcal = true;
+                                } catch(e) { $store.app.toast('Errore: ' + e.message, 'error'); }
+                                loadingToken = false;
+                            }" :disabled="loadingToken"
+                                class="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-medium hover:bg-teal-700 inline-flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Sincronizza Calendario
+                            </button>
+                            <div x-show="showIcal" x-transition class="absolute right-0 mt-2 p-4 bg-teal-50 border border-teal-200 rounded-lg shadow-lg z-20 w-96">
+                                <p class="text-sm text-teal-700 mb-2">Copia questo URL nel tuo calendario (Google Calendar, Apple Calendar, Outlook):</p>
+                                <div class="flex gap-2">
+                                    <input type="text" :value="icalUrl" readonly class="flex-1 px-2 py-1.5 bg-white border rounded text-xs font-mono">
+                                    <button @click="navigator.clipboard.writeText(icalUrl); $store.app.toast('URL copiato!', 'success'); showIcal = false"
+                                            class="px-3 py-1.5 bg-teal-600 text-white rounded text-xs hover:bg-teal-700">Copia</button>
+                                </div>
+                                <p class="text-xs text-teal-500 mt-2">Questo token e dedicato al feed calendario. Non condividerlo.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3 mb-4 text-xs">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-600"></span> Confermato</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-500"></span> Proposto</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-400"></span> Completato</span>
+                    </div>
+                    <div id="my-fullcalendar"></div>
+
+                    <!-- Detail modal -->
+                    <template x-if="modalOpen && selectedAssignment">
+                        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeDetail()">
+                            <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4" x-text="selectedAssignment.site_name || 'Dettaglio Turno'"></h3>
+                                <dl class="space-y-3 text-sm">
+                                    <div class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Inizio</dt>
+                                        <dd class="font-medium" x-text="fmtDt(selectedAssignment.start_datetime)"></dd>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Fine</dt>
+                                        <dd class="font-medium" x-text="fmtDt(selectedAssignment.end_datetime)"></dd>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Durata</dt>
+                                        <dd class="font-medium" x-text="selectedAssignment.duration_hours + 'h'"></dd>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Sede</dt>
+                                        <dd class="font-medium" x-text="(selectedAssignment.site_name || '') + (selectedAssignment.site_city ? ' - ' + selectedAssignment.site_city : '')"></dd>
+                                    </div>
+                                    <div x-show="selectedAssignment.institution_name" class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Istituzione</dt>
+                                        <dd class="font-medium" x-text="selectedAssignment.institution_name"></dd>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Tipo</dt>
+                                        <dd class="font-medium" x-text="(selectedAssignment.shift_type || 'Standard') + (selectedAssignment.is_night ? ' (notte)' : '')"></dd>
+                                    </div>
+                                    <div class="flex justify-between border-b border-slate-100 pb-2">
+                                        <dt class="text-slate-500">Compenso</dt>
+                                        <dd class="font-medium" x-text="fmtPay(selectedAssignment.pay_amount)"></dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-slate-500">Stato</dt>
+                                        <dd><span class="text-xs px-2 py-1 rounded-full font-medium" :class="statusColor(selectedAssignment.status)" x-text="statusLabel(selectedAssignment.status)"></span></dd>
+                                    </div>
+                                </dl>
+                                <button @click="closeDetail()" class="mt-5 w-full py-2 bg-slate-100 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">Chiudi</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- ==================== MESSAGGI ==================== -->
+            <template x-if="page === 'messaggi'">
+                <div x-data="messagesPage()">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Messaggi</h2>
+                        <button @click="openNewConversation()" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">Nuovo Messaggio</button>
+                    </div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <!-- New conversation modal -->
+                    <template x-if="showNewConversation">
+                        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showNewConversation = false">
+                            <div class="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+                                <h3 class="text-lg font-bold text-slate-800 mb-4">Nuovo Messaggio</h3>
+                                <div class="space-y-2 max-h-64 overflow-y-auto">
+                                    <template x-for="c in contacts" :key="c.user_id">
+                                        <button @click="startNewConversation(c)" class="w-full text-left p-3 rounded-lg hover:bg-slate-50 flex items-center justify-between">
+                                            <div>
+                                                <div class="text-sm font-medium text-slate-800" x-text="c.name"></div>
+                                                <div class="text-xs text-slate-500" x-text="c.email"></div>
+                                            </div>
+                                            <span class="badge text-xs" :class="roleColor(c.role)" x-text="roleLabel(c.role)"></span>
+                                        </button>
+                                    </template>
+                                    <div x-show="contacts.length === 0" class="text-center py-4 text-sm text-slate-400">Nessun contatto disponibile</div>
+                                </div>
+                                <button @click="showNewConversation = false" class="mt-4 w-full py-2 bg-slate-100 rounded-lg text-sm hover:bg-slate-200">Chiudi</button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="!loading" class="flex gap-4" style="height: calc(100vh - 180px)">
+                        <!-- Conversation list -->
+                        <div class="w-80 shrink-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
+                             :class="activeUserId ? 'hidden lg:flex' : 'flex'">
+                            <div class="p-3 border-b border-slate-100">
+                                <div class="text-sm font-semibold text-slate-700">Conversazioni</div>
+                            </div>
+                            <div class="flex-1 overflow-y-auto">
+                                <template x-for="conv in conversations" :key="conv.user_id">
+                                    <button @click="openConversation(conv.user_id, conv.user_name)"
+                                            class="w-full text-left p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                                            :class="activeUserId === conv.user_id ? 'bg-blue-50' : ''">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-sm font-medium text-slate-800 truncate" x-text="conv.user_name"></span>
+                                            <span class="text-xs text-slate-400" x-text="timeAgo(conv.last_message_at)"></span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs text-slate-500 truncate flex-1" x-text="truncate(conv.last_message, 40)"></span>
+                                            <span x-show="conv.unread_count > 0"
+                                                  class="ml-2 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center shrink-0"
+                                                  x-text="conv.unread_count"></span>
+                                        </div>
+                                    </button>
+                                </template>
+                                <div x-show="conversations.length === 0" class="text-center py-8 text-sm text-slate-400">
+                                    Nessuna conversazione.<br>Inizia inviando un messaggio.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thread panel -->
+                        <div class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
+                             :class="!activeUserId ? 'hidden lg:flex' : 'flex'">
+                            <template x-if="!activeUserId">
+                                <div class="flex-1 flex items-center justify-center text-sm text-slate-400">
+                                    Seleziona una conversazione
+                                </div>
+                            </template>
+                            <template x-if="activeUserId">
+                                <div class="flex flex-col h-full">
+                                    <!-- Thread header -->
+                                    <div class="p-3 border-b border-slate-100 flex items-center gap-3">
+                                        <button @click="backToList()" class="lg:hidden p-1 hover:bg-slate-100 rounded">
+                                            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                        </button>
+                                        <div class="text-sm font-semibold text-slate-800" x-text="activeUserName"></div>
+                                    </div>
+                                    <!-- Messages -->
+                                    <div id="chat-thread" class="chat-thread flex-1 p-4" style="min-height: 0">
+                                        <div x-show="loadingThread" class="flex justify-center py-8"><div class="spinner"></div></div>
+                                        <template x-for="msg in messages" :key="msg.id">
+                                            <div class="flex" :class="isMe(msg.sender_id) ? 'justify-end' : 'justify-start'">
+                                                <div class="chat-bubble" :class="isMe(msg.sender_id) ? 'chat-sent' : 'chat-received'">
+                                                    <div x-text="msg.body"></div>
+                                                    <div class="text-xs mt-1 opacity-60" x-text="fmtTime(msg.sent_at)"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <div x-show="!loadingThread && messages.length === 0" class="text-center py-8 text-sm text-slate-400">
+                                            Inizia la conversazione
+                                        </div>
+                                    </div>
+                                    <!-- Compose -->
+                                    <div class="p-3 border-t border-slate-100">
+                                        <div class="flex gap-2">
+                                            <textarea x-model="newMessage" @keydown.enter.meta="sendMessage()" @keydown.enter.ctrl="sendMessage()"
+                                                      placeholder="Scrivi un messaggio..." rows="1"
+                                                      class="flex-1 px-3 py-2 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                            <button @click="sendMessage()" :disabled="sendingMsg || !newMessage.trim()"
+                                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 shrink-0">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== STORICO TURNI ==================== -->
+            <template x-if="page === 'storico'">
+                <div x-data="myHistoryPage">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Storico Turni</h2>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+                    <div x-show="!loading" class="space-y-6">
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500">Turni Totali</div>
+                                <div class="text-2xl font-bold text-blue-600" x-text="totalShifts"></div>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500">Completati</div>
+                                <div class="text-2xl font-bold text-green-600" x-text="completedCount"></div>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500">Ore Lavorate</div>
+                                <div class="text-2xl font-bold text-teal-600" x-text="totalHours + 'h'"></div>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                                <div class="text-xs text-slate-500">Compenso Totale</div>
+                                <div class="text-2xl font-bold text-slate-800" x-text="'€' + totalPay"></div>
+                            </div>
+                        </div>
+                        <!-- Filter -->
+                        <div class="flex items-center gap-3">
+                            <label class="text-sm text-slate-600">Filtra per mese:</label>
+                            <select x-model="filterMonth" @change="load()" class="px-3 py-2 border rounded-lg text-sm">
+                                <option value="">Tutti</option>
+                                <template x-for="opt in monthOptions" :key="opt.value">
+                                    <option :value="opt.value" x-text="opt.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <!-- Table -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <template x-if="assignments.length === 0">
+                                <div class="text-center py-8 text-sm text-slate-400">Nessun turno trovato</div>
+                            </template>
+                            <template x-if="assignments.length > 0">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th class="text-left px-4 py-3 font-medium text-slate-600">Data</th>
+                                                <th class="text-left px-4 py-3 font-medium text-slate-600">Orario</th>
+                                                <th class="text-left px-4 py-3 font-medium text-slate-600">Sede</th>
+                                                <th class="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Durata</th>
+                                                <th class="text-left px-4 py-3 font-medium text-slate-600">Stato</th>
+                                                <th class="text-left px-4 py-3 font-medium text-slate-600">Compenso</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="a in assignments" :key="a.id">
+                                                <tr class="border-b border-slate-100">
+                                                    <td class="px-4 py-3" x-text="fmtDate(a.start_datetime)"></td>
+                                                    <td class="px-4 py-3 text-slate-600" x-text="fmtTime(a.start_datetime) + ' - ' + fmtTime(a.end_datetime)"></td>
+                                                    <td class="px-4 py-3 font-medium" x-text="a.site_name || 'N/D'"></td>
+                                                    <td class="px-4 py-3 text-slate-600 hidden sm:table-cell" x-text="a.duration_hours + 'h'"></td>
+                                                    <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full font-medium" :class="statusColor(a.status)" x-text="statusLabel(a.status)"></span></td>
+                                                    <td class="px-4 py-3 text-slate-600" x-text="a.pay_amount ? '€' + a.pay_amount.toFixed(0) : '-'"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
             <!-- ==================== DISPONIBILITA MEDICO ==================== -->
             <template x-if="page === 'disponibilita'">
                 <div x-data="availabilityPage()">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-6">La Mia Disponibilita</h2>
-                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">La Mia Disponibilita</h2>
+                        <div class="flex gap-2">
+                            <button @click="openRecurringForm()" class="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-medium hover:bg-teal-700">Ricorrente</button>
+                            <button @click="repeatPreviousMonth()" :disabled="repeatingMonth" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-50" x-text="repeatingMonth ? 'Copiando...' : 'Ripeti Mese Precedente'"></button>
+                            <div class="flex bg-slate-200 rounded-lg overflow-hidden">
+                                <button @click="setView('month')" class="px-3 py-1.5 text-xs font-medium transition-colors" :class="viewMode === 'month' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-300'">Mese</button>
+                                <button @click="setView('week')" class="px-3 py-1.5 text-xs font-medium transition-colors" :class="viewMode === 'week' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-300'">Settimana</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message" @click="message=''"></div>
                     <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <!-- Recurring availability form (P6) -->
+                    <template x-if="showRecurringForm">
+                        <div class="mb-6 bg-teal-50 border border-teal-200 rounded-xl p-5">
+                            <h4 class="font-semibold text-teal-800 mb-3">Disponibilita Ricorrente</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                <div>
+                                    <label class="block text-xs text-slate-500 mb-2">Giorni della settimana</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template x-for="(label, idx) in recurDayLabels" :key="idx">
+                                            <label class="flex items-center gap-1.5 text-sm cursor-pointer">
+                                                <input type="checkbox" x-model="recurDays[idx]" @change="updateRecurPreview()" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                                                <span x-text="label"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div><label class="block text-xs text-slate-500 mb-1">Dal</label><input x-model="recurStartDate" @change="updateRecurPreview()" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Al</label><input x-model="recurEndDate" @change="updateRecurPreview()" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Ora Inizio</label><input x-model="recurStartTime" type="time" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Ora Fine</label><input x-model="recurEndTime" type="time" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block text-xs text-slate-500 mb-1">Tipo</label>
+                                <select x-model="recurType" class="px-3 py-2 border rounded-lg text-sm">
+                                    <option value="available">Disponibile</option>
+                                    <option value="preferred">Preferito</option>
+                                    <option value="reluctant">Riluttante</option>
+                                </select>
+                            </div>
+                            <div x-show="recurPreview.length > 0" class="mb-3 p-3 bg-white rounded-lg border border-teal-100">
+                                <p class="text-xs text-teal-700 font-medium mb-1" x-text="'Anteprima: ' + recurPreview.length + ' giorni'"></p>
+                                <p class="text-xs text-slate-500 truncate" x-text="recurPreview.slice(0, 10).join(', ') + (recurPreview.length > 10 ? '...' : '')"></p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="saveRecurring()" :disabled="savingRecur" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50" x-text="savingRecur ? 'Creando...' : 'Crea Disponibilita'"></button>
+                                <button @click="showRecurringForm = false" class="px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-600">Annulla</button>
+                            </div>
+                        </div>
+                    </template>
+
                     <div x-show="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Calendar column -->
                         <div class="lg:col-span-2 space-y-4">
-                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                                <!-- Month navigation -->
-                                <div class="flex items-center justify-between mb-4">
-                                    <button @click="prevMonth()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                    </button>
-                                    <h3 class="text-lg font-semibold text-slate-800 capitalize" x-text="monthName"></h3>
-                                    <button @click="nextMonth()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                    </button>
-                                </div>
-                                <!-- Day headers -->
-                                <div class="grid grid-cols-7 gap-1 mb-1">
-                                    <template x-for="d in ['Lun','Mar','Mer','Gio','Ven','Sab','Dom']">
-                                        <div class="text-xs font-medium text-slate-400 text-center py-1" x-text="d"></div>
-                                    </template>
-                                </div>
-                                <!-- Calendar grid -->
-                                <div class="grid grid-cols-7 gap-1">
-                                    <template x-for="(cell, idx) in calendarDays" :key="idx">
-                                        <div>
-                                            <template x-if="!cell">
-                                                <div class="aspect-square"></div>
+
+                            <!-- MONTH VIEW -->
+                            <template x-if="viewMode === 'month'">
+                                <div>
+                                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <button @click="prevMonth()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                            </button>
+                                            <h3 class="text-lg font-semibold text-slate-800 capitalize" x-text="monthName"></h3>
+                                            <button @click="nextMonth()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                            </button>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1 mb-1">
+                                            <template x-for="d in ['Lun','Mar','Mer','Gio','Ven','Sab','Dom']">
+                                                <div class="text-xs font-medium text-slate-400 text-center py-1" x-text="d"></div>
                                             </template>
-                                            <template x-if="cell">
-                                                <div @click="selectDate(cell.dateStr)"
-                                                     class="aspect-square p-1 text-center text-sm rounded-lg cursor-pointer hover:bg-slate-100 relative flex flex-col items-center justify-center"
-                                                     :class="{
-                                                         'ring-2 ring-blue-500': isToday(cell.dateStr),
-                                                         'bg-blue-50': selectedDate === cell.dateStr,
-                                                     }">
-                                                    <span x-text="cell.day" class="text-slate-700"></span>
-                                                    <div x-show="dayDotColor(cell.dateStr)" class="w-1.5 h-1.5 rounded-full mt-0.5" :class="dayDotColor(cell.dateStr)"></div>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="(cell, idx) in calendarDays" :key="idx">
+                                                <div>
+                                                    <template x-if="!cell"><div class="aspect-square"></div></template>
+                                                    <template x-if="cell">
+                                                        <div @click="selectDate(cell.dateStr)"
+                                                             class="aspect-square p-1 text-center text-sm rounded-lg cursor-pointer hover:bg-slate-100 relative flex flex-col items-center justify-center"
+                                                             :class="{'ring-2 ring-blue-500': isToday(cell.dateStr), 'bg-blue-50': selectedDate === cell.dateStr}">
+                                                            <span x-text="cell.day" class="text-slate-700"></span>
+                                                            <div x-show="dayDotColor(cell.dateStr)" class="w-1.5 h-1.5 rounded-full mt-0.5" :class="dayDotColor(cell.dateStr)"></div>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                             </template>
                                         </div>
-                                    </template>
-                                </div>
-                                <!-- Legend -->
-                                <div class="flex gap-4 mt-3 text-xs text-slate-500">
-                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Disponibile</span>
-                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Preferito</span>
-                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Riluttante</span>
-                                </div>
-                            </div>
-
-                            <!-- Selected day detail -->
-                            <template x-if="selectedDate">
-                                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <h4 class="font-semibold text-slate-800" x-text="new Date(selectedDate + 'T00:00:00').toLocaleDateString('it-IT', {weekday: 'long', day: 'numeric', month: 'long'})"></h4>
-                                        <button @click="openAddForDate(selectedDate)" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                                        <div class="flex gap-4 mt-3 text-xs text-slate-500">
+                                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Disponibile</span>
+                                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Preferito</span>
+                                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Riluttante</span>
+                                        </div>
                                     </div>
-                                    <template x-if="entriesForDate(selectedDate).length === 0">
-                                        <p class="text-sm text-slate-400">Nessuna disponibilita per questo giorno</p>
+
+                                    <!-- Selected day detail -->
+                                    <template x-if="selectedDate">
+                                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mt-4">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h4 class="font-semibold text-slate-800" x-text="new Date(selectedDate + 'T00:00:00').toLocaleDateString('it-IT', {weekday: 'long', day: 'numeric', month: 'long'})"></h4>
+                                                <button @click="openAddForDate(selectedDate)" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                                            </div>
+                                            <template x-if="entriesForDate(selectedDate).length === 0">
+                                                <p class="text-sm text-slate-400">Nessuna disponibilita per questo giorno</p>
+                                            </template>
+                                            <div class="space-y-2">
+                                                <template x-for="entry in entriesForDate(selectedDate)" :key="entry.id">
+                                                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                                                        <div class="flex items-center gap-2">
+                                                            <span :class="typeColor(entry.availability_type)" class="badge" x-text="typeLabel(entry.availability_type)"></span>
+                                                            <span class="text-sm text-slate-600" x-text="formatTime(entry.start_time) + ' - ' + formatTime(entry.end_time)"></span>
+                                                        </div>
+                                                        <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600 text-xs">Elimina</button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
                                     </template>
-                                    <div class="space-y-2">
-                                        <template x-for="entry in entriesForDate(selectedDate)" :key="entry.id">
-                                            <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
-                                                <div class="flex items-center gap-2">
-                                                    <span :class="typeColor(entry.availability_type)" class="badge" x-text="typeLabel(entry.availability_type)"></span>
-                                                    <span class="text-sm text-slate-600" x-text="formatTime(entry.start_time) + ' - ' + formatTime(entry.end_time)"></span>
-                                                </div>
-                                                <button @click="deleteEntry(entry.id)" class="text-red-400 hover:text-red-600 text-xs">Elimina</button>
+                                </div>
+                            </template>
+
+                            <!-- WEEK VIEW (P7) -->
+                            <template x-if="viewMode === 'week'">
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <button @click="prevWeek()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                        </button>
+                                        <h3 class="text-base font-semibold text-slate-800" x-text="weekTitle"></h3>
+                                        <button @click="nextWeek()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        </button>
+                                    </div>
+                                    <!-- Weekly grid -->
+                                    <div class="grid grid-cols-8 gap-px bg-slate-200 rounded-lg overflow-hidden" style="min-height: 500px">
+                                        <!-- Header row -->
+                                        <div class="bg-slate-50 p-2 text-xs text-slate-400 font-medium"></div>
+                                        <template x-for="day in weekDays" :key="day.dateStr">
+                                            <div class="bg-slate-50 p-2 text-center" :class="day.isToday ? 'bg-blue-50' : ''">
+                                                <div class="text-xs font-medium text-slate-500" x-text="day.label"></div>
+                                                <div class="text-sm font-bold" :class="day.isToday ? 'text-blue-600' : 'text-slate-700'" x-text="day.dayNum"></div>
                                             </div>
                                         </template>
+                                        <!-- Hour rows -->
+                                        <template x-for="hour in weekHours" :key="hour">
+                                            <template x-if="true">
+                                                <div class="contents">
+                                                    <div class="bg-white p-1 text-xs text-slate-400 text-right pr-2 flex items-start justify-end" x-text="String(hour).padStart(2,'0') + ':00'"></div>
+                                                    <template x-for="day in weekDays" :key="day.dateStr + '-' + hour">
+                                                        <div @click="weekDayClick(day.dateStr, hour)"
+                                                             class="bg-white p-0.5 relative cursor-pointer hover:bg-slate-50 border-t border-slate-100"
+                                                             :class="day.isToday ? 'bg-blue-50/30' : ''"
+                                                             style="min-height: 48px">
+                                                            <template x-for="entry in weekEntriesForDay(day.dateStr).filter(e => parseInt(e.start_time) === hour)" :key="entry.id">
+                                                                <div class="absolute left-0.5 right-0.5 rounded text-xs px-1 py-0.5 border truncate z-10"
+                                                                     :class="entryBgColor(entry.availability_type)"
+                                                                     :title="typeLabel(entry.availability_type) + ' ' + formatTime(entry.start_time) + '-' + formatTime(entry.end_time)"
+                                                                     x-text="formatTime(entry.start_time) + '-' + formatTime(entry.end_time)"
+                                                                     @click.stop="selectedDate = day.dateStr"></div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </template>
+                                    </div>
+                                    <div class="flex gap-4 mt-3 text-xs text-slate-500">
+                                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-200 border border-green-400"></span> Disponibile</span>
+                                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-200 border border-blue-400"></span> Preferito</span>
+                                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-200 border border-amber-400"></span> Riluttante</span>
                                     </div>
                                 </div>
                             </template>
 
-                            <!-- Add availability form -->
+                            <!-- Add availability form (shared by both views) -->
                             <template x-if="showAddForm">
                                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                                     <h4 class="font-semibold text-slate-800 mb-3">Aggiungi Disponibilita</h4>
@@ -1081,7 +1738,6 @@
                                     <h3 class="font-semibold text-slate-800">Indisponibilita</h3>
                                     <button @click="showUnavForm = !showUnavForm" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
                                 </div>
-                                <!-- Add unavailability form -->
                                 <div x-show="showUnavForm" class="mb-4 p-3 bg-slate-50 rounded-lg space-y-2">
                                     <div><label class="block text-xs text-slate-500 mb-1">Data Inizio</label><input x-model="unavStartDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
                                     <div><label class="block text-xs text-slate-500 mb-1">Data Fine</label><input x-model="unavEndDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
@@ -1099,7 +1755,6 @@
                                         <button @click="showUnavForm = false" class="px-3 py-1.5 bg-slate-100 rounded-lg text-xs text-slate-600">Annulla</button>
                                     </div>
                                 </div>
-                                <!-- Unavailability list -->
                                 <div class="space-y-2">
                                     <template x-for="unav in unavailabilities" :key="unav.id">
                                         <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
@@ -1118,13 +1773,210 @@
                 </div>
             </template>
 
-            <!-- ==================== QUALIFICHE MEDICO ==================== -->
+            <!-- ==================== DOCUMENTAZIONE UNIFICATA (P10) ==================== -->
+            <template x-if="page === 'documentazione'">
+                <div x-data="documentazionePage()">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Documentazione</h2>
+                    <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message" @click="message=''"></div>
+                    <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
+
+                    <div x-show="!loading" class="space-y-6">
+                        <!-- Alerts banner -->
+                        <template x-if="alertItems.length > 0">
+                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-amber-800" x-text="alertItems.length + ' attenzione'"></h4>
+                                        <div class="mt-1 space-y-1">
+                                            <template x-for="(item, i) in alertItems" :key="i">
+                                                <p class="text-sm" :class="item.type === 'error' ? 'text-red-700' : item.type === 'critical' ? 'text-red-600' : 'text-amber-700'" x-text="item.text"></p>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Completeness bar -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-slate-600">Documenti obbligatori</span>
+                                <span class="text-sm font-medium" x-text="completeness.uploaded + ' / ' + completeness.total"></span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all" :class="completeness.percent === 100 ? 'bg-green-500' : 'bg-amber-500'" :style="'width:' + completeness.percent + '%'"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs -->
+                        <div class="flex gap-1 bg-slate-100 rounded-lg p-1">
+                            <button @click="tab = 'certificazioni'" class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors" :class="tab === 'certificazioni' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'">Certificazioni</button>
+                            <button @click="tab = 'documenti'" class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors" :class="tab === 'documenti' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'">Documenti</button>
+                            <button @click="tab = 'lingue'" class="flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors" :class="tab === 'lingue' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'">Lingue</button>
+                        </div>
+
+                        <!-- Tab: Certificazioni -->
+                        <div x-show="tab === 'certificazioni'" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-slate-800">Certificazioni</h3>
+                                <button @click="showAddCert = !showAddCert" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                            </div>
+                            <div x-show="showAddCert" class="mb-4 p-4 bg-slate-50 rounded-lg">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                                    <div><label class="block text-xs text-slate-500 mb-1">Tipo</label>
+                                        <select x-model="newCertTypeId" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <template x-for="ct in filteredCertTypes" :key="ct.id"><option :value="ct.id" x-text="ct.name"></option></template>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Ottenimento</label><input x-model="newCertObtainedDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Scadenza</label><input x-model="newCertExpiryDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="addCertification()" :disabled="savingCert" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingCert ? 'Salvataggio...' : 'Salva'"></button>
+                                    <button @click="showAddCert = false" class="px-4 py-2 bg-slate-100 rounded-lg text-xs text-slate-600">Annulla</button>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="cert in certifications" :key="cert.id">
+                                    <div class="flex items-center justify-between p-3 rounded-lg" :class="certStatus(cert) === 'critical' || certStatus(cert) === 'expired' ? 'bg-red-50 border border-red-100' : certStatus(cert) === 'expiring' ? 'bg-amber-50 border border-amber-100' : 'bg-slate-50'">
+                                        <div>
+                                            <div class="font-medium text-sm text-slate-800" x-text="cert.certification_type?.name || 'Certificazione'"></div>
+                                            <div class="text-xs text-slate-500">
+                                                <span x-text="'Ottenuta: ' + cert.obtained_date"></span>
+                                                <span x-show="cert.expiry_date" x-text="' - Scade: ' + cert.expiry_date"></span>
+                                                <span x-show="certDaysLeft(cert) !== null && certDaysLeft(cert) > 0 && certDaysLeft(cert) <= 90" class="ml-1 text-amber-600 font-medium" x-text="'(' + certDaysLeft(cert) + ' giorni)'"></span>
+                                                <span x-show="certDaysLeft(cert) !== null && certDaysLeft(cert) <= 0" class="ml-1 text-red-600 font-medium">Scaduta!</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span :class="certStatusColor(cert)" class="badge" x-text="certStatusLabel(cert)"></span>
+                                            <button @click="removeCertification(cert.certification_type_id)" class="text-red-400 hover:text-red-600 text-xs">Rimuovi</button>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="certifications.length === 0" class="text-center py-4 text-sm text-slate-400">Nessuna certificazione registrata</div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Documenti -->
+                        <div x-show="tab === 'documenti'" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-slate-800">Documenti</h3>
+                                <button @click="showUpload = !showUpload" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Carica</button>
+                            </div>
+                            <div x-show="showUpload" class="mb-4 p-4 bg-slate-50 rounded-lg">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    <div><label class="block text-xs text-slate-500 mb-1">Tipo Documento</label>
+                                        <select x-model="uploadTypeId" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <template x-for="dt in documentTypes" :key="dt.id">
+                                                <option :value="dt.id" x-text="dt.name + (dt.is_mandatory ? ' (obbligatorio)' : '')"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">File</label><input type="file" @change="upload" accept=".pdf,.jpg,.jpeg,.png" class="w-full px-3 py-2 border rounded-lg text-sm" :disabled="!uploadTypeId || uploading"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Emissione</label><input x-model="uploadIssuedAt" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Data Scadenza</label><input x-model="uploadExpiresAt" type="date" class="w-full px-3 py-2 border rounded-lg text-sm"></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="showUpload = false" class="px-4 py-2 bg-slate-100 rounded-lg text-xs text-slate-600">Annulla</button>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="doc in documents" :key="doc.id">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-medium text-sm text-slate-800" x-text="docTypeName(doc.document_type_id)"></div>
+                                            <div class="text-xs text-slate-500 truncate" x-text="doc.original_filename + ' (' + formatFileSize(doc.file_size_bytes) + ')'"></div>
+                                            <div x-show="doc.expires_at" class="text-xs text-slate-500" x-text="'Scade: ' + doc.expires_at"></div>
+                                            <div x-show="doc.rejection_reason" class="text-xs text-red-500 mt-1" x-text="'Motivo: ' + doc.rejection_reason"></div>
+                                        </div>
+                                        <div class="flex items-center gap-2 ml-3">
+                                            <span :class="docStatusColor(doc.verification_status)" class="badge" x-text="docStatusLabel(doc.verification_status)"></span>
+                                            <button @click="deleteDoc(doc.id)" class="text-red-400 hover:text-red-600 text-xs">Elimina</button>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="documents.length === 0" class="text-center py-4 text-sm text-slate-400">Nessun documento caricato</div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Lingue -->
+                        <div x-show="tab === 'lingue'" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-slate-800">Lingue</h3>
+                                <button @click="showAddLang = !showAddLang" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">+ Aggiungi</button>
+                            </div>
+                            <div x-show="showAddLang" class="mb-4 p-4 bg-slate-50 rounded-lg">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    <div><label class="block text-xs text-slate-500 mb-1">Lingua</label>
+                                        <select x-model="newLangId" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="">Seleziona...</option>
+                                            <template x-for="l in filteredLangs" :key="l.id"><option :value="l.id" x-text="l.name"></option></template>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-xs text-slate-500 mb-1">Livello</label>
+                                        <select x-model="newLangProficiency" class="w-full px-3 py-2 border rounded-lg text-sm">
+                                            <option value="1">1 - Base</option><option value="2">2 - Elementare</option><option value="3">3 - Intermedio</option><option value="4">4 - Avanzato</option><option value="5">5 - Madrelingua</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="addLanguage()" :disabled="savingLang" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50" x-text="savingLang ? 'Salvataggio...' : 'Salva'"></button>
+                                    <button @click="showAddLang = false" class="px-4 py-2 bg-slate-100 rounded-lg text-xs text-slate-600">Annulla</button>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="lang in languages" :key="lang.id">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-medium text-sm text-slate-800" x-text="lang.language?.name || 'Lingua'"></span>
+                                            <span class="text-xs text-slate-500" x-text="proficiencyLabel(lang.proficiency_level)"></span>
+                                            <div class="flex gap-0.5">
+                                                <template x-for="i in 5" :key="i">
+                                                    <span class="w-2 h-2 rounded-full" :class="i <= lang.proficiency_level ? 'bg-blue-500' : 'bg-slate-200'"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <button @click="removeLanguage(lang.language_id)" class="text-red-400 hover:text-red-600 text-xs">Rimuovi</button>
+                                    </div>
+                                </template>
+                                <div x-show="languages.length === 0" class="text-center py-4 text-sm text-slate-400">Nessuna lingua registrata</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ==================== QUALIFICHE MEDICO (legacy, redirect to documentazione) ==================== -->
             <template x-if="page === 'qualifiche'">
                 <div x-data="qualificationsPage()">
                     <h2 class="text-2xl font-bold text-slate-800 mb-6">Le Mie Qualifiche</h2>
                     <div x-show="message" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-600" x-text="message"></div>
                     <div x-show="loading" class="flex justify-center py-12"><div class="spinner"></div></div>
                     <div x-show="!loading" class="space-y-6">
+                        <!-- Expiration alerts banner (P9) -->
+                        <template x-if="expiringCerts.length > 0">
+                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-amber-800">Attenzione: certificazioni in scadenza</h4>
+                                        <div class="mt-1 space-y-1">
+                                            <template x-for="cert in expiringCerts" :key="cert.id">
+                                                <p class="text-sm text-amber-700">
+                                                    <span class="font-medium" x-text="cert.certification_type?.name || 'Certificazione'"></span>
+                                                    <span x-text="certDaysLeft(cert) <= 0 ? ' - Scaduta!' : ' - Scade tra ' + certDaysLeft(cert) + ' giorni'"></span>
+                                                </p>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
                         <!-- Certifications section -->
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                             <div class="flex items-center justify-between mb-4">
@@ -1160,6 +2012,11 @@
                                             <div class="text-xs text-slate-500">
                                                 <span x-text="'Ottenuta: ' + cert.obtained_date"></span>
                                                 <span x-show="cert.expiry_date" x-text="' - Scade: ' + cert.expiry_date"></span>
+                                                <span x-show="certDaysLeft(cert) !== null && certDaysLeft(cert) > 0 && certDaysLeft(cert) <= 90"
+                                                      class="ml-1 text-amber-600 font-medium"
+                                                      x-text="'(' + certDaysLeft(cert) + ' giorni)'"></span>
+                                                <span x-show="certDaysLeft(cert) !== null && certDaysLeft(cert) <= 0"
+                                                      class="ml-1 text-red-600 font-medium">Scaduta!</span>
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2">
@@ -1419,6 +2276,18 @@
 <script src="/static/js/pages/doctors.js"></script>
 <script src="/static/js/pages/institutions.js"></script>
 <script src="/static/js/pages/calendar.js"></script>
+<script src="/static/js/pages/my_calendar.js"></script>
+<script src="/static/js/pages/my_history.js"></script>
+<script src="/static/js/pages/documentazione.js"></script>
+<script src="/static/js/pages/available_shifts.js"></script>
+<script src="/static/js/pages/messages.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then(function(reg) { console.log('SW registered', reg.scope); })
+        .catch(function(err) { console.warn('SW registration failed', err); });
+}
+</script>
 </body>
 </html>

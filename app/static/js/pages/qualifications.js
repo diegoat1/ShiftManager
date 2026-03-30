@@ -86,18 +86,33 @@ function qualificationsPage() {
             const now = new Date();
             if (exp < now) return 'expired';
             const diff = (exp - now) / (1000 * 60 * 60 * 24);
-            if (diff <= 30) return 'expiring';
+            if (diff <= 30) return 'critical';
+            if (diff <= 90) return 'expiring';
             return 'active';
+        },
+
+        certDaysLeft(cert) {
+            if (!cert.expiry_date) return null;
+            const exp = new Date(cert.expiry_date);
+            const now = new Date();
+            return Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
         },
 
         certStatusLabel(cert) {
             const s = this.certStatus(cert);
-            return { active: 'Attiva', expiring: 'In Scadenza', expired: 'Scaduta', inactive: 'Inattiva' }[s] || s;
+            return { active: 'Attiva', expiring: 'In Scadenza', critical: 'Scade Presto', expired: 'Scaduta', inactive: 'Inattiva' }[s] || s;
         },
 
         certStatusColor(cert) {
             const s = this.certStatus(cert);
-            return { active: 'badge-green', expiring: 'badge-yellow', expired: 'badge-red', inactive: 'badge-gray' }[s] || '';
+            return { active: 'badge-green', expiring: 'badge-yellow', critical: 'badge-red', expired: 'badge-red', inactive: 'badge-gray' }[s] || '';
+        },
+
+        get expiringCerts() {
+            return this.certifications.filter(c => {
+                const s = this.certStatus(c);
+                return s === 'expiring' || s === 'critical' || s === 'expired';
+            });
         },
 
         // --- Languages ---
