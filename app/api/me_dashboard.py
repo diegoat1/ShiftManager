@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
@@ -27,7 +27,7 @@ async def get_my_dashboard(
     session: DbSession,
     offer_svc: OfferService = Depends(get_offer_service),
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     today = date.today()
 
     repo = AssignmentRepository(session)

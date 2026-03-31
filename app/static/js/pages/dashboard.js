@@ -7,7 +7,12 @@ document.addEventListener('alpine:init', () => {
 
         // Doctor dashboard
         isDoctorView: false,
-        doctorDashboard: null,
+        doctorDashboard: {
+            month_shifts_total: 0, month_hours_worked: 0,
+            pending_offers_count: 0, pending_offers: [],
+            upcoming_assignments: [], expiring_certifications: [],
+            missing_mandatory_docs: [], profile_completion_percent: 0,
+        },
         doctorDashboardError: null,
 
         async init() {
