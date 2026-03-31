@@ -478,46 +478,9 @@ def _export_json(doctors, institutions, shifts, filepath: str = "italy_medical_s
 
 
 async def main():
-    # Ensure seed data exists
-    await seed()
-
-    async with async_session_factory() as session:
-        # Skip if demo data already exists
-        count = await session.scalar(select(func.count()).select_from(Doctor))
-        if count and count > 5:
-            print(f"Demo data already exists ({count} doctors). Skipping.")
-            return
-
-        # Load reference data
-        cert_result = await session.execute(select(CertificationType))
-        cert_map = {ct.name: ct for ct in cert_result.scalars().all()}
-
-        lang_result = await session.execute(select(Language))
-        lang_map = {l.code: l for l in lang_result.scalars().all()}
-
-        cl_result = await session.execute(select(CodeLevel))
-        code_level_map = {cl.code: cl for cl in cl_result.scalars().all()}
-
-        print("Generating 50 doctors...")
-        doctors = await generate_doctors(session, cert_map, lang_map, code_level_map, n=50)
-
-        print("Generating 6 institutions with ~13 sites...")
-        institutions, sites_with_type = await generate_institutions(session, code_level_map)
-
-        target_month = date(2026, 4, 1)
-        print(f"Generating shifts for {target_month.strftime('%B %Y')}...")
-        shifts = await generate_shifts(session, sites_with_type, target_month, code_level_map)
-
-        print(f"Generating availability for {len(doctors)} doctors...")
-        await generate_availability(session, doctors, target_month)
-
-        await session.commit()
-
-        print(f"\nGenerated: {len(doctors)} doctors, {len(institutions)} institutions, "
-              f"{len(sites_with_type)} sites, {len(shifts)} shifts")
-
-        _export_json(doctors, institutions, shifts)
-        print("Done!")
+    # Demo data generation disabled — app starts with clean slate.
+    # Use generate_doctors/generate_institutions/generate_shifts directly if needed.
+    print("Demo data generation skipped.")
 
 
 if __name__ == "__main__":
