@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentDoctor, DbSession, get_offer_service
 from app.api.me_assignments import _to_my_assignment
@@ -48,6 +49,7 @@ async def get_my_dashboard(
     ninety_days = today + timedelta(days=90)
     cert_result = await session.execute(
         select(DoctorCertification)
+        .options(selectinload(DoctorCertification.certification_type))
         .where(
             DoctorCertification.doctor_id == doctor.id,
             DoctorCertification.is_active == True,
