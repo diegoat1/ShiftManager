@@ -41,7 +41,7 @@ CODE_LEVELS = [
     {"code": "WHITE", "description": "Codice Bianco - Non-urgent", "severity_order": 1},
     {"code": "GREEN", "description": "Codice Verde - Minor urgency", "severity_order": 2},
     {"code": "YELLOW", "description": "Codice Giallo - Urgent", "severity_order": 3},
-    {"code": "ORANGE", "description": "Codice Arancione - High urgency", "severity_order": 4},
+    {"code": "BLUE", "description": "Codice Azzurro - High urgency", "severity_order": 4},
     {"code": "RED", "description": "Codice Rosso - Emergency", "severity_order": 5},
 ]
 
