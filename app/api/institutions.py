@@ -76,6 +76,12 @@ async def update_site(site_id: uuid.UUID, data: SiteUpdate, svc: InstSvc):
     return site
 
 
+@router.delete("/sites/{site_id}", status_code=204)
+async def delete_site(site_id: uuid.UUID, svc: InstSvc, admin: RequireAdmin):
+    if not await svc.delete_site(site_id):
+        raise HTTPException(404, "Site not found")
+
+
 # Requirements
 @router.post("/{institution_id}/requirements", response_model=RequirementRead, status_code=201)
 async def add_requirement(institution_id: uuid.UUID, data: RequirementCreate, svc: InstSvc):

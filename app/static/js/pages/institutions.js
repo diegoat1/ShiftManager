@@ -33,7 +33,59 @@ document.addEventListener('alpine:init', () => {
         },
 
         async init() {
-            await this.load();
+            await Promise.all([this.load(), this.loadLookups()]);
+        },
+
+        async loadLookups() {
+            const [cls, cts, ls] = await Promise.all([
+                API.get('/lookups/code-levels').catch(() => []),
+                API.get('/lookups/certification-types').catch(() => []),
+                API.get('/lookups/languages').catch(() => []),
+            ]);
+            this.codeLevels = cls.sort((a, b) => a.severity_order - b.severity_order);
+            this.certTypes = cts;
+            this.availableLangs = ls;
+        },
+
+        certName(id) {
+            const ct = this.certTypes.find(c => c.id === id);
+            return ct ? ct.name : 'Cert #' + id;
+        },
+
+        langName(id) {
+            const l = this.availableLangs.find(l => l.id === id);
+            return l ? l.name : 'Lingua #' + id;
+        },
+
+        codeLevelName(id) {
+            const cl = this.codeLevels.find(c => c.id === id);
+            return cl ? cl.code : 'Livello #' + id;
+        },
+
+        cefrLabel(level) {
+            return ['', 'A1/A2', 'B1', 'B2', 'C1', 'C2'][level] || level;
+        },
+
+        async deleteInstitution(instId) {
+            if (!confirm('Eliminare questa istituzione e tutte le sue sedi e turni?')) return;
+            try {
+                await API.del(`/institutions/${instId}`);
+                await this.load();
+            } catch (e) {
+                Alpine.store('app').toast('Errore: ' + e.message, 'error');
+            }
+        },
+
+        async deleteSite(siteId, instId) {
+            if (!confirm('Eliminare questa sede e tutti i suoi turni?')) return;
+            try {
+                await API.del(`/institutions/sites/${siteId}`);
+                await this.load();
+                delete this.requirements[instId];
+                await this.loadInstitutionDetail(instId);
+            } catch (e) {
+                Alpine.store('app').toast('Errore: ' + e.message, 'error');
+            }
         },
 
         async load() {
@@ -134,16 +186,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async openStructureModal() {
-            if (!this.codeLevels.length) {
-                const [cls, cts, ls] = await Promise.all([
-                    API.get('/lookups/code-levels').catch(() => []),
-                    API.get('/lookups/certification-types').catch(() => []),
-                    API.get('/lookups/languages').catch(() => []),
-                ]);
-                this.codeLevels = cls.sort((a, b) => a.severity_order - b.severity_order);
-                this.certTypes = cts;
-                this.availableLangs = ls;
-            }
+            if (!this.codeLevels.length) await this.loadLookups();
             this.resetStructureForm();
             this.structureModalOpen = true;
         },

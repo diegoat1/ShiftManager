@@ -71,6 +71,14 @@ class InstitutionService:
     async def get_sites(self, institution_id: uuid.UUID):
         return await self.repo.get_sites_by_institution(institution_id)
 
+    async def delete_site(self, site_id: uuid.UUID) -> bool:
+        site = await self.repo.get_site(site_id)
+        if not site:
+            return False
+        await self.session.delete(site)
+        await self.session.commit()
+        return True
+
     # Requirements
     async def add_requirement(self, institution_id: uuid.UUID, data: RequirementCreate):
         req = await self.repo.add_requirement(

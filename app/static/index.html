@@ -714,6 +714,11 @@
                                     </div>
                                     <div class="flex items-center gap-3">
                                         <span class="text-sm text-slate-400" x-text="(inst.sites?.length || 0) + ' sedi'"></span>
+                                        <button @click.stop="deleteInstitution(inst.id)"
+                                                class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Elimina istituzione">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
                                         <svg :class="isExpanded(inst.id) ? 'rotate-180' : ''"
                                              class="w-5 h-5 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -735,7 +740,7 @@
                                             <span class="text-xs font-medium text-slate-500">Requisiti certificazioni:</span>
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 <template x-for="r in requirements[inst.id] || []" :key="r.id">
-                                                    <span class="badge" :class="r.is_mandatory ? 'badge-red' : 'badge-gray'" x-text="'Cert #' + r.certification_type_id + (r.is_mandatory ? ' (obb.)' : '')"></span>
+                                                    <span class="badge" :class="r.is_mandatory ? 'badge-red' : 'badge-gray'" x-text="certName(r.certification_type_id) + (r.is_mandatory ? ' (obb.)' : ' (pref.)')"></span>
                                                 </template>
                                             </div>
                                         </div>
@@ -743,7 +748,7 @@
                                             <span class="text-xs font-medium text-slate-500">Requisiti lingue:</span>
                                             <div class="flex flex-wrap gap-1 mt-1">
                                                 <template x-for="r in langRequirements[inst.id] || []" :key="r.id">
-                                                    <span class="badge badge-blue" x-text="'Lingua #' + r.language_id + ' (min. ' + r.min_proficiency + ')'"></span>
+                                                    <span class="badge badge-blue" x-text="langName(r.language_id) + ' min. ' + cefrLabel(r.min_proficiency)"></span>
                                                 </template>
                                             </div>
                                         </div>
@@ -755,13 +760,20 @@
                                                 <div class="p-4 pl-8">
                                                     <div class="flex items-center justify-between mb-2">
                                                         <h4 class="font-medium text-slate-700" x-text="site.name"></h4>
-                                                        <span :class="site.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="site.is_active ? 'Attiva' : 'Inattiva'"></span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span :class="site.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="site.is_active ? 'Attiva' : 'Inattiva'"></span>
+                                                            <button @click="deleteSite(site.id, inst.id)"
+                                                                    class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                                    title="Elimina sede">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
                                                         <div><span class="text-slate-500">Indirizzo:</span><br><span x-text="(site.address ? site.address + ', ' : '') + (site.city || '') + (site.province ? ' (' + site.province + ')' : '')"></span></div>
                                                         <div><span class="text-slate-500">Coordinate:</span><br><span x-text="site.lat && site.lon ? site.lat.toFixed(4) + ', ' + site.lon.toFixed(4) : 'N/D'"></span></div>
                                                         <div><span class="text-slate-500">Exp. minima:</span><br><span x-text="site.min_years_experience > 0 ? site.min_years_experience + ' anni' : 'Nessuna'"></span></div>
-                                                        <div><span class="text-slate-500">Codice min.:</span><br><span x-text="site.min_code_level_id ? 'Livello #' + site.min_code_level_id : 'Nessuno'"></span></div>
+                                                        <div><span class="text-slate-500">Codice max:</span><br><span x-text="site.min_code_level_id ? codeLevelName(site.min_code_level_id) : 'Nessuno'"></span></div>
                                                     </div>
                                                     <!-- Amenities -->
                                                     <div class="flex flex-wrap gap-2 mb-3">
