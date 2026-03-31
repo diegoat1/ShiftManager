@@ -40,11 +40,8 @@ alembic upgrade head
 echo "Running seed data..."
 python -m app.utils.seed
 
-echo "Running demo data generator..."
-python -m app.utils.generate_data
-
-echo "Running test data generator..."
-python -m app.utils.generate_test_data
+echo "Cleaning up test doctors (@medici.test)..."
+python -m app.utils.cleanup_test_doctors
 
 echo "Starting uvicorn on port ${PORT:-8000}..."
 exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
