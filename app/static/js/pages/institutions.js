@@ -19,9 +19,7 @@ document.addEventListener('alpine:init', () => {
         structureSaving: false,
         structureError: '',
         newStructure: {
-            inst_name: '', tax_code: '',
-            inst_address: '', inst_city: '', inst_province: '',
-            cooperative_id: '',
+            inst_id: '',
             site_name: '', site_type: '', site_address: '', site_city: '', site_province: '',
             min_years_experience: 0,
             min_code_level_id: '',
@@ -40,6 +38,12 @@ document.addEventListener('alpine:init', () => {
         coopError: '',
         editCoopId: null,
         newCoop: { name: '', partita_iva: '', city: '', province: '', email: '', phone: '' },
+
+        // Institution state
+        instModalOpen: false,
+        instSaving: false,
+        instError: '',
+        newInst: { name: '', tax_code: '', address: '', city: '', province: '', cooperative_id: '' },
 
         // Template state
         siteTemplates: {},
@@ -248,22 +252,13 @@ document.addEventListener('alpine:init', () => {
         async submitStructure() {
             this.structureError = '';
             const s = this.newStructure;
-            if (!s.inst_name || !s.tax_code || !s.site_name) {
-                this.structureError = 'Nome istituzione, codice fiscale e nome sede sono obbligatori.';
+            if (!s.inst_id || !s.site_name) {
+                this.structureError = 'Seleziona un\'istituzione e inserisci il nome sede.';
                 return;
             }
             this.structureSaving = true;
             try {
-                const inst = await API.post('/institutions/', {
-                    name: s.inst_name,
-                    tax_code: s.tax_code,
-                    address: s.inst_address || null,
-                    city: s.inst_city || null,
-                    province: s.inst_province || null,
-                    cooperative_id: s.cooperative_id || null,
-                });
-
-                await API.post(`/institutions/${inst.id}/sites`, {
+                await API.post(`/institutions/${s.inst_id}/sites`, {
                     name: s.site_name,
                     site_type: s.site_type || null,
                     address: s.site_address || null,
@@ -281,7 +276,7 @@ document.addEventListener('alpine:init', () => {
                 // Certification requirements
                 for (const [ctId, req] of Object.entries(s.certReqs)) {
                     if (req.selected) {
-                        await API.post(`/institutions/${inst.id}/requirements`, {
+                        await API.post(`/institutions/${s.inst_id}/requirements`, {
                             certification_type_id: parseInt(ctId),
                             is_mandatory: req.is_mandatory,
                         }).catch(() => {});
@@ -290,7 +285,7 @@ document.addEventListener('alpine:init', () => {
 
                 // Language requirements
                 for (const lr of s.langReqs) {
-                    await API.post(`/institutions/${inst.id}/language-requirements`, {
+                    await API.post(`/institutions/${s.inst_id}/language-requirements`, {
                         language_id: lr.language_id,
                         min_proficiency: lr.min_proficiency,
                     }).catch(() => {});
@@ -307,9 +302,7 @@ document.addEventListener('alpine:init', () => {
 
         resetStructureForm() {
             this.newStructure = {
-                inst_name: '', tax_code: '',
-                inst_address: '', inst_city: '', inst_province: '',
-                cooperative_id: '',
+                inst_id: '',
                 site_name: '', site_type: '', site_address: '', site_city: '', site_province: '',
                 min_years_experience: 0,
                 min_code_level_id: '',
@@ -367,6 +360,37 @@ document.addEventListener('alpine:init', () => {
                 this.coopError = 'Errore: ' + e.message;
             }
             this.coopSaving = false;
+        },
+
+        // --- Institutions (create from structure modal) ---
+
+        openInstModal() {
+            this.newInst = { name: '', tax_code: '', address: '', city: '', province: '', cooperative_id: '' };
+            this.instError = '';
+            this.instModalOpen = true;
+        },
+
+        async saveInst() {
+            this.instError = '';
+            if (!this.newInst.name) { this.instError = 'Il nome è obbligatorio.'; return; }
+            this.instSaving = true;
+            try {
+                const created = await API.post('/institutions/', {
+                    name: this.newInst.name,
+                    tax_code: this.newInst.tax_code || null,
+                    address: this.newInst.address || null,
+                    city: this.newInst.city || null,
+                    province: this.newInst.province || null,
+                    cooperative_id: this.newInst.cooperative_id || null,
+                });
+                this.instModalOpen = false;
+                await this.load();
+                this.newStructure.inst_id = created.id;
+                Alpine.store('app').toast('Istituzione creata', 'success');
+            } catch (e) {
+                this.instError = 'Errore: ' + e.message;
+            }
+            this.instSaving = false;
         },
 
         // --- Templates ---

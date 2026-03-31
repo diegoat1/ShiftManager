@@ -1007,30 +1007,16 @@
                                 <div class="p-5 space-y-4">
                                     <!-- Istituzione -->
                                     <h4 class="text-sm font-semibold uppercase tracking-wide text-teal-700">Istituzione</h4>
-                                    <div class="space-y-3">
-                                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Nome *</label>
-                                            <input type="text" x-model="newStructure.inst_name" placeholder="Nome istituzione / ente" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
-                                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Codice Fiscale *</label>
-                                            <input type="text" x-model="newStructure.tax_code" placeholder="XXXXXXXXXXXXXXXX" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
-                                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Indirizzo</label>
-                                            <input type="text" x-model="newStructure.inst_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Città</label>
-                                                <input type="text" x-model="newStructure.inst_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
-                                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Prov.</label>
-                                                <input type="text" x-model="newStructure.inst_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium text-slate-600 mb-1">Cooperativa (ente pagante)</label>
-                                            <div class="flex gap-2">
-                                                <select x-model="newStructure.cooperative_id" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                                                    <option value="">-- Nessuna cooperativa --</option>
-                                                    <template x-for="c in cooperatives" :key="c.id">
-                                                        <option :value="c.id" x-text="c.name + (c.partita_iva ? ' (P.IVA: ' + c.partita_iva + ')' : '')"></option>
-                                                    </template>
-                                                </select>
-                                                <button type="button" @click="openCoopModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">+ Nuova</button>
-                                            </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">Seleziona istituzione *</label>
+                                        <div class="flex gap-2">
+                                            <select x-model="newStructure.inst_id" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                                                <option value="">-- Seleziona istituzione --</option>
+                                                <template x-for="i in institutions" :key="i.id">
+                                                    <option :value="i.id" x-text="i.name + (i.tax_code ? ' (' + i.tax_code + ')' : '')"></option>
+                                                </template>
+                                            </select>
+                                            <button type="button" @click="openInstModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">+ Nuova</button>
                                         </div>
                                     </div>
 
@@ -1175,6 +1161,54 @@
                                         <button @click="saveTemplate()" :disabled="templateSaving" class="btn-primary disabled:opacity-50">
                                             <span x-show="!templateSaving">Salva Template</span>
                                             <span x-show="templateSaving">Salvataggio...</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Institution Modal -->
+                    <template x-if="instModalOpen">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="instModalOpen = false">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-slate-800">Nuova Istituzione</h3>
+                                    <button @click="instModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="p-5 space-y-3">
+                                    <div><label class="block text-xs font-medium text-slate-600 mb-1">Nome *</label>
+                                        <input type="text" x-model="newInst.name" placeholder="Nome istituzione / ente" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs font-medium text-slate-600 mb-1">Codice Fiscale</label>
+                                        <input type="text" x-model="newInst.tax_code" placeholder="XXXXXXXXXXXXXXXX" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
+                                    <div><label class="block text-xs font-medium text-slate-600 mb-1">Indirizzo</label>
+                                        <input type="text" x-model="newInst.address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Città</label>
+                                            <input type="text" x-model="newInst.city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
+                                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Prov.</label>
+                                            <input type="text" x-model="newInst.province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">Cooperativa (ente pagante)</label>
+                                        <div class="flex gap-2">
+                                            <select x-model="newInst.cooperative_id" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                                                <option value="">-- Nessuna cooperativa --</option>
+                                                <template x-for="c in cooperatives" :key="c.id">
+                                                    <option :value="c.id" x-text="c.name + (c.partita_iva ? ' (P.IVA: ' + c.partita_iva + ')' : '')"></option>
+                                                </template>
+                                            </select>
+                                            <button type="button" @click="openCoopModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">+ Nuova</button>
+                                        </div>
+                                    </div>
+                                    <div x-show="instError" class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2" x-text="instError"></div>
+                                    <div class="flex justify-end gap-3 pt-2">
+                                        <button @click="instModalOpen = false" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">Annulla</button>
+                                        <button @click="saveInst()" :disabled="instSaving" class="btn-primary disabled:opacity-50">
+                                            <span x-show="!instSaving">Crea</span>
+                                            <span x-show="instSaving">Salvataggio...</span>
                                         </button>
                                     </div>
                                 </div>
