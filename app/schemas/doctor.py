@@ -124,6 +124,7 @@ class DoctorProfileUpdate(BaseModel):
     willing_overnight_stay: bool | None = None
     max_shifts_per_month: int | None = None
     max_night_shifts_per_month: int | None = None
+    years_experience: int | None = None
     birth_date: date | None = None
     residence_address: str | None = None
     domicile_city: str | None = None

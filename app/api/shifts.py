@@ -88,6 +88,12 @@ async def list_templates(site_id: uuid.UUID, svc: ShiftSvc):
     return await svc.get_templates(site_id)
 
 
+@router.delete("/templates/item/{template_id}", status_code=204)
+async def delete_template(template_id: uuid.UUID, svc: ShiftSvc, admin: RequireAdmin):
+    if not await svc.delete_template(template_id):
+        raise HTTPException(404, "Template not found")
+
+
 @router.post("/generate", response_model=list[ShiftRead])
 async def generate_shifts(data: GenerateShiftsRequest, svc: ShiftSvc, admin: RequireAdmin):
     return await svc.generate_shifts(data)

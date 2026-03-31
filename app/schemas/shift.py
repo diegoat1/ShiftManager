@@ -14,6 +14,8 @@ class TemplateCreate(BaseModel):
     required_doctors: int = 1
     base_pay: float = 0.0
     is_night: bool = False
+    min_code_level_id: int | None = None
+    requires_emergency_vehicle: bool = False
 
 
 class TemplateRead(BaseModel):
@@ -25,6 +27,8 @@ class TemplateRead(BaseModel):
     required_doctors: int
     base_pay: float
     is_night: bool
+    min_code_level_id: int | None = None
+    requires_emergency_vehicle: bool = False
 
 
 class ShiftCreate(BaseModel):

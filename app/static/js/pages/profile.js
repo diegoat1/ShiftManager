@@ -95,6 +95,7 @@ function profilePage() {
                     willing_to_relocate: this.profile.willing_to_relocate,
                     willing_overnight_stay: this.profile.willing_overnight_stay,
                     max_shifts_per_month: this.profile.max_shifts_per_month,
+                    years_experience: this.profile.years_experience,
                 };
                 this.profile = await API.patch('/me/profile', data);
                 this.message = 'Profilo aggiornato con successo';

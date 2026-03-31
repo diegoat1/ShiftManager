@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 from app.api.deps import CurrentUser, get_document_service, get_doctor_service
 from app.core.config import settings
@@ -86,3 +87,25 @@ async def delete_document(doc_id: uuid.UUID, user: CurrentUser, svc: DocSvc, doc
         raise HTTPException(404, "Doctor profile not found")
     if not await svc.delete_document(doc_id, doctor.id):
         raise HTTPException(404, "Document not found or not deletable")
+
+
+@router.get("/{doc_id}/download")
+async def download_document(doc_id: uuid.UUID, user: CurrentUser, svc: DocSvc, doctor_svc: DoctorSvc):
+    if user.role != UserRole.MEDICO:
+        raise HTTPException(403, "Only doctors can access documents")
+    doctor = await doctor_svc.get_by_user_id(user.id)
+    if not doctor:
+        raise HTTPException(404, "Doctor profile not found")
+    doc = await svc.repo.get_by_id(doc_id)
+    if not doc or doc.doctor_id != doctor.id:
+        raise HTTPException(404, "Document not found")
+    file_path = Path(doc.file_path)
+    if not file_path.is_absolute():
+        file_path = Path(settings.UPLOAD_DIR).parent / doc.file_path
+    if not file_path.exists():
+        raise HTTPException(404, "File not found on server")
+    return FileResponse(
+        path=str(file_path),
+        filename=doc.original_filename,
+        media_type=doc.mime_type,
+    )

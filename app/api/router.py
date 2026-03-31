@@ -7,6 +7,7 @@ from app.api import (
     audit,
     auth,
     availability,
+    cooperative,
     doctors,
     documents,
     institutions,
@@ -50,6 +51,7 @@ api_router.include_router(me_notifications.router)
 api_router.include_router(offers.router)
 api_router.include_router(analytics.router)
 api_router.include_router(audit.router)
+api_router.include_router(cooperative.router)
 
 # Auth router is mounted at root level (no /api/v1 prefix)
 auth_router = auth.router

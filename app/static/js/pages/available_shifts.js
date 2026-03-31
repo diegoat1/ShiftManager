@@ -9,6 +9,7 @@ document.addEventListener('alpine:init', () => {
         filterEnd: '',
         filterType: '',
         filterNight: '',
+        filterOnlyEligible: false,
 
         institutionTypes: [
             { value: 'pronto_soccorso', label: 'Pronto Soccorso' },
@@ -35,7 +36,10 @@ document.addEventListener('alpine:init', () => {
                 if (this.filterType) params.institution_type = this.filterType;
                 if (this.filterNight === 'night') params.is_night = true;
                 else if (this.filterNight === 'day') params.is_night = false;
-                this.shifts = await API.get('/me/available-shifts', params);
+                const all = await API.get('/me/available-shifts', params);
+                this.shifts = this.filterOnlyEligible
+                    ? all.filter(s => s.eligibility?.is_eligible)
+                    : all;
             } catch (e) {
                 Alpine.store('app').toast('Errore nel caricamento: ' + e.message, 'error');
             }

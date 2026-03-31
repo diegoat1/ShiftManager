@@ -11,6 +11,7 @@ class InstitutionCreate(BaseModel):
     city: str | None = None
     province: str | None = None
     institution_type: str | None = None
+    cooperative_id: uuid.UUID | None = None
 
 
 class InstitutionUpdate(BaseModel):
@@ -20,6 +21,7 @@ class InstitutionUpdate(BaseModel):
     province: str | None = None
     institution_type: str | None = None
     is_active: bool | None = None
+    cooperative_id: uuid.UUID | None = None
 
 
 class SiteCreate(BaseModel):
@@ -84,6 +86,7 @@ class InstitutionRead(BaseModel):
     province: str | None
     institution_type: str | None
     is_active: bool
+    cooperative_id: uuid.UUID | None = None
     created_at: datetime
     sites: list[SiteRead] = []
 

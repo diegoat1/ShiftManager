@@ -27,8 +27,11 @@ class ShiftTemplate(TimestampMixin, Base):
     required_doctors: Mapped[int] = mapped_column(default=1)
     base_pay: Mapped[float] = mapped_column(default=0.0)
     is_night: Mapped[bool] = mapped_column(default=False)
+    min_code_level_id: Mapped[int | None] = mapped_column(ForeignKey("code_levels.id"), default=None)
+    requires_emergency_vehicle: Mapped[bool] = mapped_column(default=False)
 
     site: Mapped["InstitutionSite"] = relationship()
+    min_code_level: Mapped["CodeLevel | None"] = relationship(foreign_keys=[min_code_level_id])
 
 
 class Shift(TimestampMixin, Base):

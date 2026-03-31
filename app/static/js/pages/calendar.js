@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
 
     Alpine.data('calendarPage', () => ({
         institutions: [],
+        codeLevels: [],
         selectedSite: '',
         calendar: null,
         loading: true,
@@ -28,16 +29,23 @@ document.addEventListener('alpine:init', () => {
         createOpen: false,
         createSaving: false,
         createError: '',
+        siteTemplates: [],
         newShift: {
-            date: '', startTime: '08:00', endTime: '20:00',
+            date: '', endDate: '', rangeMode: false,
+            startTime: '08:00', endTime: '20:00',
             required_doctors: 2, base_pay: 0, is_night: false,
             shift_type: '', status: 'open',
+            min_code_level_id: null, requires_emergency_vehicle: false,
         },
 
         async init() {
             try {
-                const data = await API.get('/institutions/', { skip: 0, limit: 200 });
+                const [data, cls] = await Promise.all([
+                    API.get('/institutions/', { skip: 0, limit: 200 }),
+                    API.get('/lookups/code-levels').catch(() => []),
+                ]);
                 this.institutions = data.items;
+                this.codeLevels = cls.sort((a, b) => a.severity_order - b.severity_order);
             } catch (e) {
                 console.error('Calendar init failed:', e);
             }
@@ -144,6 +152,12 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        _updateIsNight() {
+            const [sh] = this.newShift.startTime.split(':').map(Number);
+            const [eh] = this.newShift.endTime.split(':').map(Number);
+            this.newShift.is_night = sh >= 20 || (eh <= 8 && eh < sh);
+        },
+
         openCreate() {
             if (!this.selectedSite) {
                 Alpine.store('app').toast('Seleziona una sede prima di creare un turno', 'error');
@@ -152,9 +166,73 @@ document.addEventListener('alpine:init', () => {
             // Default date to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            this.newShift.date = tomorrow.toISOString().split('T')[0];
+            const dateStr = tomorrow.toISOString().split('T')[0];
+            this.newShift.date = dateStr;
+            this.newShift.endDate = dateStr;
+            this.newShift.rangeMode = false;
             this.createError = '';
+            this._updateIsNight();
+            // Load templates for the selected site
+            this.siteTemplates = [];
+            API.get(`/shifts/templates/${this.selectedSite}`).then(t => { this.siteTemplates = t; }).catch(() => {});
             this.createOpen = true;
+        },
+
+        applyTemplate(t) {
+            const pad = n => String(n).padStart(2, '0');
+            this.newShift.startTime = pad(t.start_time.substring(0, 2)) + ':' + pad(t.start_time.substring(3, 5));
+            this.newShift.endTime = pad(t.end_time.substring(0, 2)) + ':' + pad(t.end_time.substring(3, 5));
+            this.newShift.required_doctors = t.required_doctors;
+            this.newShift.base_pay = t.base_pay;
+            this.newShift.is_night = t.is_night;
+            this.newShift.min_code_level_id = t.min_code_level_id || null;
+            this.newShift.requires_emergency_vehicle = t.requires_emergency_vehicle;
+            this.newShift.shift_type = t.name;
+        },
+
+        get createRangeDays() {
+            const s = this.newShift;
+            if (!s.rangeMode || !s.date || !s.endDate) return 1;
+            const start = new Date(s.date + 'T00:00:00');
+            const end = new Date(s.endDate + 'T00:00:00');
+            if (end < start) return 0;
+            return Math.round((end - start) / 86400000) + 1;
+        },
+
+        _buildShiftPayload(dateStr) {
+            const s = this.newShift;
+            const [sh, sm] = s.startTime.split(':').map(Number);
+            const [eh, em] = s.endTime.split(':').map(Number);
+            let endDateStr = dateStr;
+            if (eh * 60 + em <= sh * 60 + sm) {
+                // End crosses midnight — advance end date by 1
+                const d = new Date(dateStr + 'T00:00:00');
+                d.setDate(d.getDate() + 1);
+                endDateStr = d.toISOString().split('T')[0];
+            }
+            return {
+                site_id: this.selectedSite,
+                date: dateStr,
+                start_datetime: `${dateStr}T${s.startTime}:00`,
+                end_datetime: `${endDateStr}T${s.endTime}:00`,
+                required_doctors: parseInt(s.required_doctors) || 1,
+                base_pay: parseFloat(s.base_pay) || 0,
+                is_night: s.is_night,
+                shift_type: s.shift_type || null,
+                min_code_level_id: s.min_code_level_id ? parseInt(s.min_code_level_id) : null,
+                requires_emergency_vehicle: s.requires_emergency_vehicle,
+            };
+        },
+
+        _datesBetween(startStr, endStr) {
+            const dates = [];
+            const current = new Date(startStr + 'T00:00:00');
+            const end = new Date(endStr + 'T00:00:00');
+            while (current <= end) {
+                dates.push(current.toISOString().split('T')[0]);
+                current.setDate(current.getDate() + 1);
+            }
+            return dates;
         },
 
         async submitCreate() {
@@ -164,37 +242,28 @@ document.addEventListener('alpine:init', () => {
                 this.createError = 'Data, ora inizio e ora fine sono obbligatori.';
                 return;
             }
+            if (s.rangeMode && (!s.endDate || s.endDate < s.date)) {
+                this.createError = 'La data di fine deve essere uguale o successiva alla data di inizio.';
+                return;
+            }
             this.createSaving = true;
             try {
-                // Build naive datetime strings (no timezone) to match TIMESTAMP WITHOUT TIME ZONE columns
-                let endDate = s.date;
-                const [sh, sm] = s.startTime.split(':').map(Number);
-                const [eh, em] = s.endTime.split(':').map(Number);
-                if (eh * 60 + em <= sh * 60 + sm) {
-                    // End crosses midnight — advance date by 1
-                    const d = new Date(s.date + 'T00:00:00');
-                    d.setDate(d.getDate() + 1);
-                    endDate = d.toISOString().split('T')[0];
-                }
-
-                const payload = {
-                    site_id: this.selectedSite,
-                    date: s.date,
-                    start_datetime: `${s.date}T${s.startTime}:00`,
-                    end_datetime: `${endDate}T${s.endTime}:00`,
-                    required_doctors: parseInt(s.required_doctors) || 1,
-                    base_pay: parseFloat(s.base_pay) || 0,
-                    is_night: s.is_night,
-                    shift_type: s.shift_type || null,
-                };
-                const created = await API.post('/shifts/', payload);
-                // If status is 'open', update it (default is 'draft')
-                if (s.status === 'open') {
-                    await API.patch(`/shifts/${created.id}`, { status: 'open' });
+                const dates = s.rangeMode ? this._datesBetween(s.date, s.endDate) : [s.date];
+                let created = 0;
+                for (const dateStr of dates) {
+                    const payload = this._buildShiftPayload(dateStr);
+                    const result = await API.post('/shifts/', payload);
+                    if (s.status === 'open') {
+                        await API.patch(`/shifts/${result.id}`, { status: 'open' });
+                    }
+                    created++;
                 }
                 this.createOpen = false;
                 if (this.calendar) this.calendar.refetchEvents();
-                Alpine.store('app').toast('Turno creato!', 'success');
+                Alpine.store('app').toast(
+                    created === 1 ? 'Turno creato!' : `${created} turni creati!`,
+                    'success'
+                );
             } catch (e) {
                 this.createError = 'Errore: ' + e.message;
             }

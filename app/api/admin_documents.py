@@ -1,9 +1,12 @@
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 
 from app.api.deps import RequireAdmin, get_document_service
+from app.core.config import settings
 from app.schemas.document import DocumentRead, DocumentTypeRead, DocumentVerify
 from app.services.document import DocumentService
 from app.utils.enums import VerificationStatus
@@ -45,6 +48,23 @@ async def reject_document(doc_id: uuid.UUID, data: DocumentVerify, admin: Requir
     if not doc:
         raise HTTPException(404, "Document not found")
     return doc
+
+
+@router.get("/{doc_id}/download")
+async def admin_download_document(doc_id: uuid.UUID, admin: RequireAdmin, svc: DocSvc):
+    doc = await svc.repo.get_by_id(doc_id)
+    if not doc:
+        raise HTTPException(404, "Document not found")
+    file_path = Path(doc.file_path)
+    if not file_path.is_absolute():
+        file_path = Path(settings.UPLOAD_DIR).parent / doc.file_path
+    if not file_path.exists():
+        raise HTTPException(404, "File not found on server")
+    return FileResponse(
+        path=str(file_path),
+        filename=doc.original_filename,
+        media_type=doc.mime_type,
+    )
 
 
 # Document types endpoint (accessible by any authenticated user)

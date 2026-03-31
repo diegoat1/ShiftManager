@@ -157,7 +157,7 @@ function qualificationsPage() {
         },
 
         proficiencyLabel(level) {
-            return { 1: 'Base', 2: 'Elementare', 3: 'Intermedio', 4: 'Avanzato', 5: 'Madrelingua' }[level] || level;
+            return { 1: 'A1', 2: 'A2', 3: 'B1', 4: 'B2', 5: 'C1', 6: 'C2' }[level] || level;
         },
     };
 }

@@ -104,6 +104,14 @@ class ShiftService:
     async def get_templates(self, site_id: uuid.UUID):
         return await self.repo.get_templates_by_site(site_id)
 
+    async def delete_template(self, template_id: uuid.UUID) -> bool:
+        tmpl = await self.repo.get_template(template_id)
+        if not tmpl:
+            return False
+        await self.session.delete(tmpl)
+        await self.session.commit()
+        return True
+
     async def generate_shifts(self, data: GenerateShiftsRequest) -> list[Shift]:
         """Generate shifts from templates for a date range."""
         created = []
@@ -127,6 +135,8 @@ class ShiftService:
                     required_doctors=tmpl.required_doctors,
                     base_pay=tmpl.base_pay,
                     is_night=tmpl.is_night,
+                    min_code_level_id=tmpl.min_code_level_id,
+                    requires_emergency_vehicle=tmpl.requires_emergency_vehicle,
                     status=ShiftStatus.OPEN,
                 )
 

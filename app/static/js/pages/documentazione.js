@@ -2,7 +2,7 @@ function documentazionePage() {
     return {
         loading: true,
         message: '',
-        tab: 'certificazioni',
+        tab: 'documenti_cert',
 
         // Certifications
         certifications: [],
@@ -28,6 +28,7 @@ function documentazionePage() {
         uploadTypeId: '',
         uploadIssuedAt: '',
         uploadExpiresAt: '',
+        uploadNoExpiry: false,
         uploading: false,
 
         async init() {
@@ -202,7 +203,7 @@ function documentazionePage() {
         },
 
         proficiencyLabel(level) {
-            return { 1: 'Base', 2: 'Elementare', 3: 'Intermedio', 4: 'Avanzato', 5: 'Madrelingua' }[level] || level;
+            return { 1: 'A1', 2: 'A2', 3: 'B1', 4: 'B2', 5: 'C1', 6: 'C2' }[level] || level;
         },
 
         // --- Documents ---
@@ -217,11 +218,15 @@ function documentazionePage() {
                 formData.append('file', file);
                 formData.append('document_type_id', this.uploadTypeId);
                 if (this.uploadIssuedAt) formData.append('issued_at', this.uploadIssuedAt);
-                if (this.uploadExpiresAt) formData.append('expires_at', this.uploadExpiresAt);
+                if (!this.uploadNoExpiry && this.uploadExpiresAt) formData.append('expires_at', this.uploadExpiresAt);
                 await API.uploadFile('/me/documents/', formData);
                 this.showUpload = false;
-                this.message = 'Documento caricato con successo';
+                this.uploadTypeId = '';
+                this.uploadIssuedAt = '';
+                this.uploadExpiresAt = '';
+                this.uploadNoExpiry = false;
                 this.documents = await API.get('/me/documents/');
+                Alpine.store('app').toast('Documento caricato con successo', 'success');
             } catch (e) {
                 this.message = 'Errore: ' + e.message;
             } finally { this.uploading = false; }

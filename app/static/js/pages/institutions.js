@@ -21,6 +21,7 @@ document.addEventListener('alpine:init', () => {
         newStructure: {
             inst_name: '', tax_code: '', institution_type: '',
             inst_address: '', inst_city: '', inst_province: '',
+            cooperative_id: '',
             site_name: '', site_address: '', site_city: '', site_province: '',
             min_years_experience: 0,
             min_code_level_id: '',
@@ -32,8 +33,29 @@ document.addEventListener('alpine:init', () => {
             newLangProficiency: 2,
         },
 
+        // Cooperative state
+        cooperatives: [],
+        coopModalOpen: false,
+        coopSaving: false,
+        coopError: '',
+        editCoopId: null,
+        newCoop: { name: '', partita_iva: '', city: '', province: '', email: '', phone: '' },
+
+        // Template state
+        siteTemplates: {},
+        addTemplateOpen: false,
+        templateSaving: false,
+        templateError: '',
+        templateSiteId: null,
+        newTemplate: { name: '', start_time: '08:00', end_time: '20:00', required_doctors: 1, base_pay: 0, is_night: false, min_code_level_id: '', requires_emergency_vehicle: false },
+
+        // Generate shifts state
+        generateStart: {},
+        generateEnd: {},
+        generatingShifts: {},
+
         async init() {
-            await Promise.all([this.load(), this.loadLookups()]);
+            await Promise.all([this.load(), this.loadLookups(), this.loadCooperatives()]);
         },
 
         async loadLookups() {
@@ -239,6 +261,7 @@ document.addEventListener('alpine:init', () => {
                     address: s.inst_address || null,
                     city: s.inst_city || null,
                     province: s.inst_province || null,
+                    cooperative_id: s.cooperative_id || null,
                 });
 
                 await API.post(`/institutions/${inst.id}/sites`, {
@@ -286,6 +309,7 @@ document.addEventListener('alpine:init', () => {
             this.newStructure = {
                 inst_name: '', tax_code: '', institution_type: '',
                 inst_address: '', inst_city: '', inst_province: '',
+                cooperative_id: '',
                 site_name: '', site_address: '', site_city: '', site_province: '',
                 min_years_experience: 0,
                 min_code_level_id: '',
@@ -297,6 +321,128 @@ document.addEventListener('alpine:init', () => {
                 newLangProficiency: 2,
             };
             this.structureError = '';
+        },
+
+        // --- Cooperatives ---
+
+        async loadCooperatives() {
+            try {
+                this.cooperatives = await API.get('/cooperatives/', { limit: 200 });
+            } catch (e) {
+                console.error('Cooperatives load failed:', e);
+            }
+        },
+
+        openCoopModal(coop = null) {
+            this.editCoopId = coop ? coop.id : null;
+            this.newCoop = coop
+                ? { name: coop.name, partita_iva: coop.partita_iva || '', city: coop.city || '', province: coop.province || '', email: coop.email || '', phone: coop.phone || '' }
+                : { name: '', partita_iva: '', city: '', province: '', email: '', phone: '' };
+            this.coopError = '';
+            this.coopModalOpen = true;
+        },
+
+        async saveCoop() {
+            this.coopError = '';
+            if (!this.newCoop.name) { this.coopError = 'Il nome è obbligatorio.'; return; }
+            this.coopSaving = true;
+            try {
+                const payload = {
+                    name: this.newCoop.name,
+                    partita_iva: this.newCoop.partita_iva || null,
+                    city: this.newCoop.city || null,
+                    province: this.newCoop.province || null,
+                    email: this.newCoop.email || null,
+                    phone: this.newCoop.phone || null,
+                };
+                if (this.editCoopId) {
+                    await API.patch(`/cooperatives/${this.editCoopId}`, payload);
+                } else {
+                    await API.post('/cooperatives/', payload);
+                }
+                this.coopModalOpen = false;
+                await this.loadCooperatives();
+                Alpine.store('app').toast('Cooperativa salvata', 'success');
+            } catch (e) {
+                this.coopError = 'Errore: ' + e.message;
+            }
+            this.coopSaving = false;
+        },
+
+        // --- Templates ---
+
+        async loadTemplates(siteId) {
+            try {
+                const templates = await API.get(`/shifts/templates/${siteId}`);
+                this.siteTemplates = { ...this.siteTemplates, [siteId]: templates };
+            } catch (e) {
+                console.error('Templates load failed:', e);
+            }
+        },
+
+        openAddTemplate(siteId) {
+            this.templateSiteId = siteId;
+            this.newTemplate = { name: '', start_time: '08:00', end_time: '20:00', required_doctors: 1, base_pay: 0, is_night: false, min_code_level_id: '', requires_emergency_vehicle: false };
+            this.templateError = '';
+            this.addTemplateOpen = true;
+        },
+
+        async saveTemplate() {
+            this.templateError = '';
+            if (!this.newTemplate.name) { this.templateError = 'Il nome è obbligatorio.'; return; }
+            this.templateSaving = true;
+            try {
+                await API.post('/shifts/templates', {
+                    site_id: this.templateSiteId,
+                    name: this.newTemplate.name,
+                    start_time: this.newTemplate.start_time + ':00',
+                    end_time: this.newTemplate.end_time + ':00',
+                    required_doctors: this.newTemplate.required_doctors || 1,
+                    base_pay: this.newTemplate.base_pay || 0,
+                    is_night: this.newTemplate.is_night,
+                    min_code_level_id: this.newTemplate.min_code_level_id ? parseInt(this.newTemplate.min_code_level_id) : null,
+                    requires_emergency_vehicle: this.newTemplate.requires_emergency_vehicle,
+                });
+                this.addTemplateOpen = false;
+                await this.loadTemplates(this.templateSiteId);
+                Alpine.store('app').toast('Template salvato', 'success');
+            } catch (e) {
+                this.templateError = 'Errore: ' + e.message;
+            }
+            this.templateSaving = false;
+        },
+
+        async deleteTemplate(templateId, siteId) {
+            if (!confirm('Eliminare questo template?')) return;
+            try {
+                await API.del(`/shifts/templates/item/${templateId}`);
+                await this.loadTemplates(siteId);
+                Alpine.store('app').toast('Template eliminato', 'success');
+            } catch (e) {
+                Alpine.store('app').toast('Errore: ' + e.message, 'error');
+            }
+        },
+
+        async generateFromTemplates(siteId) {
+            const start = this.generateStart[siteId];
+            const end = this.generateEnd[siteId];
+            if (!start || !end) { Alpine.store('app').toast('Seleziona le date', 'error'); return; }
+            const templates = this.siteTemplates[siteId] || [];
+            if (!templates.length) return;
+            this.generatingShifts = { ...this.generatingShifts, [siteId]: true };
+            try {
+                const created = await API.post('/shifts/generate', {
+                    site_id: siteId,
+                    template_ids: templates.map(t => t.id),
+                    start_date: start,
+                    end_date: end,
+                });
+                await this.loadSiteShifts(siteId);
+                Alpine.store('app').toast(created.length + ' turni generati', 'success');
+            } catch (e) {
+                Alpine.store('app').toast('Errore: ' + e.message, 'error');
+            }
+            this.generatingShifts = { ...this.generatingShifts, [siteId]: false };
         },
     }));
 

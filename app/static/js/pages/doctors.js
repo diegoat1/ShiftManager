@@ -307,6 +307,22 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // --- Activate / Deactivate ---
+
+        async toggleActive(doctor) {
+            const newState = !doctor.is_active;
+            const label = newState ? 'attivare' : 'disattivare';
+            if (!confirm(`Vuoi ${label} il medico ${doctor.first_name} ${doctor.last_name}?`)) return;
+            try {
+                await API.patch(`/doctors/${doctor.id}`, { is_active: newState });
+                await this.refreshSelectedDoctor();
+                await this.load();
+                Alpine.store('app').toast(newState ? 'Medico attivato' : 'Medico disattivato', 'success');
+            } catch (e) {
+                Alpine.store('app').toast('Errore: ' + e.message, 'error');
+            }
+        },
+
         // --- Formatters ---
 
         fmtDate(d) {

@@ -27,6 +27,7 @@ function availabilityPage() {
         recurEndDate: '',
         savingRecur: false,
         recurPreview: [],
+        recurBothShifts: false, // create day+night entries per selected day
         // Repeat month
         repeatingMonth: false,
         // Add unavailability form
@@ -303,8 +304,30 @@ function availabilityPage() {
             this.recurEndTime = '20:00';
             this.recurType = 'available';
             this.recurPreview = [];
+            this.recurBothShifts = false;
             this.showRecurringForm = true;
             this.showAddForm = false;
+        },
+
+        openDayPreset() {
+            this.openRecurringForm();
+            this.recurStartTime = '08:00';
+            this.recurEndTime = '20:00';
+            this.recurBothShifts = false;
+        },
+
+        openNightPreset() {
+            this.openRecurringForm();
+            this.recurStartTime = '20:00';
+            this.recurEndTime = '08:00';
+            this.recurBothShifts = false;
+        },
+
+        openBothPreset() {
+            this.openRecurringForm();
+            this.recurStartTime = '08:00';
+            this.recurEndTime = '20:00';
+            this.recurBothShifts = true;
         },
 
         get recurDayLabels() {
@@ -345,16 +368,25 @@ function availabilityPage() {
             this.savingRecur = true;
             this.message = '';
             try {
-                const entries = dates.map(d => ({
-                    date: d,
-                    start_time: this.recurStartTime + ':00',
-                    end_time: this.recurEndTime + ':00',
-                    availability_type: this.recurType,
-                }));
+                let entries;
+                if (this.recurBothShifts) {
+                    // Create one day entry (08:00-20:00) and one night entry (20:00-08:00) per date
+                    entries = dates.flatMap(d => [
+                        { date: d, start_time: '08:00:00', end_time: '20:00:00', availability_type: this.recurType },
+                        { date: d, start_time: '20:00:00', end_time: '08:00:00', availability_type: this.recurType },
+                    ]);
+                } else {
+                    entries = dates.map(d => ({
+                        date: d,
+                        start_time: this.recurStartTime + ':00',
+                        end_time: this.recurEndTime + ':00',
+                        availability_type: this.recurType,
+                    }));
+                }
                 await API.post('/me/availability/bulk', { entries });
                 await this.reloadEntries();
                 this.showRecurringForm = false;
-                this.message = dates.length + ' disponibilita create con successo';
+                this.message = (this.recurBothShifts ? dates.length * 2 : dates.length) + ' disponibilita create con successo';
             } catch (e) {
                 this.message = 'Errore: ' + e.message;
             } finally {

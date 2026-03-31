@@ -68,8 +68,13 @@ class DoctorRepository(BaseRepository[Doctor]):
         cert = DoctorCertification(**kwargs)
         self.session.add(cert)
         await self.session.flush()
-        await self.session.refresh(cert)
-        return cert
+        stmt = (
+            select(DoctorCertification)
+            .options(selectinload(DoctorCertification.certification_type))
+            .where(DoctorCertification.id == cert.id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def remove_certification(self, doctor_id: uuid.UUID, cert_type_id: int) -> bool:
         stmt = select(DoctorCertification).where(
@@ -88,8 +93,13 @@ class DoctorRepository(BaseRepository[Doctor]):
         lang = DoctorLanguage(**kwargs)
         self.session.add(lang)
         await self.session.flush()
-        await self.session.refresh(lang)
-        return lang
+        stmt = (
+            select(DoctorLanguage)
+            .options(selectinload(DoctorLanguage.language))
+            .where(DoctorLanguage.id == lang.id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def remove_language(self, doctor_id: uuid.UUID, language_id: int) -> bool:
         stmt = select(DoctorLanguage).where(

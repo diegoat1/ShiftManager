@@ -18,8 +18,10 @@ class Institution(TimestampMixin, Base):
     province: Mapped[str | None] = mapped_column(String(2))
     institution_type: Mapped[str | None] = mapped_column(String(50))
     is_active: Mapped[bool] = mapped_column(default=True)
+    cooperative_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("cooperatives.id", ondelete="SET NULL"), nullable=True)
 
     sites: Mapped[list["InstitutionSite"]] = relationship(back_populates="institution", cascade="all, delete-orphan")
+    cooperative: Mapped["Cooperative | None"] = relationship(back_populates="institutions")  # noqa: F821
 
 
 class InstitutionSite(TimestampMixin, Base):

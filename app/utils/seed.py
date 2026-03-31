@@ -39,11 +39,11 @@ LANGUAGES = [
 ]
 
 CODE_LEVELS = [
-    {"code": "WHITE", "description": "Codice Bianco - Non-urgent", "severity_order": 1},
-    {"code": "GREEN", "description": "Codice Verde - Minor urgency", "severity_order": 2},
-    {"code": "YELLOW", "description": "Codice Giallo - Urgent", "severity_order": 3},
-    {"code": "ORANGE", "description": "Codice Arancione - High urgency", "severity_order": 4},
-    {"code": "RED", "description": "Codice Rosso - Emergency", "severity_order": 5},
+    {"code": "WHITE", "description": "1 - Bianco (Non urgente)", "severity_order": 1},
+    {"code": "GREEN", "description": "2 - Verde (Urgenza minore)", "severity_order": 2},
+    {"code": "BLUE", "description": "3 - Giallo/Azzurro (Urgente)", "severity_order": 3},
+    {"code": "ORANGE", "description": "4 - Arancione (Alta urgenza)", "severity_order": 4},
+    {"code": "RED", "description": "5 - Rosso (Emergenza)", "severity_order": 5},
 ]
 
 
