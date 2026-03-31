@@ -9,6 +9,7 @@ from app.models.doctor import (
     CertificationType,
     Language,
 )
+from app.models.cooperative import Cooperative  # noqa: F401 — needed for relationship resolution
 from app.models.institution import Institution, InstitutionSite
 from app.models.requirement import CodeLevel, InstitutionLanguageRequirement
 from app.models.user import User
