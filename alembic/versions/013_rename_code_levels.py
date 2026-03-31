@@ -16,36 +16,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # If a BLUE row already exists and YELLOW also exists, remove the stale BLUE
+    # so we can rename YELLOW → BLUE without a unique constraint violation.
     op.execute("""
-        UPDATE code_levels SET
-            code = 'WHITE',
-            description = '1 - Bianco (Non urgente)'
-        WHERE code = 'WHITE'
+        DELETE FROM code_levels
+        WHERE code = 'BLUE'
+          AND EXISTS (SELECT 1 FROM code_levels WHERE code = 'YELLOW')
     """)
-    op.execute("""
-        UPDATE code_levels SET
-            code = 'GREEN',
-            description = '2 - Verde (Urgenza minore)'
-        WHERE code = 'GREEN'
-    """)
+    # Rename YELLOW → BLUE (no-op if YELLOW was already renamed in a prior run)
     op.execute("""
         UPDATE code_levels SET
             code = 'BLUE',
             description = '3 - Giallo/Azzurro (Urgente)'
         WHERE code = 'YELLOW'
     """)
-    op.execute("""
-        UPDATE code_levels SET
-            code = 'ORANGE',
-            description = '4 - Arancione (Alta urgenza)'
-        WHERE code = 'ORANGE'
-    """)
-    op.execute("""
-        UPDATE code_levels SET
-            code = 'RED',
-            description = '5 - Rosso (Emergenza)'
-        WHERE code = 'RED'
-    """)
+    # Update descriptions for the remaining codes (idempotent)
+    op.execute("UPDATE code_levels SET description = '1 - Bianco (Non urgente)' WHERE code = 'WHITE'")
+    op.execute("UPDATE code_levels SET description = '2 - Verde (Urgenza minore)' WHERE code = 'GREEN'")
+    op.execute("UPDATE code_levels SET description = '3 - Giallo/Azzurro (Urgente)' WHERE code = 'BLUE'")
+    op.execute("UPDATE code_levels SET description = '4 - Arancione (Alta urgenza)' WHERE code = 'ORANGE'")
+    op.execute("UPDATE code_levels SET description = '5 - Rosso (Emergenza)' WHERE code = 'RED'")
 
 
 def downgrade() -> None:
