@@ -9,6 +9,11 @@ document.addEventListener('alpine:init', () => {
         siteShifts: {},
         loadingDetail: {},
 
+        // Lookup data for modal
+        codeLevels: [],
+        certTypes: [],
+        availableLangs: [],
+
         // Add structure modal
         structureModalOpen: false,
         structureSaving: false,
@@ -17,9 +22,14 @@ document.addEventListener('alpine:init', () => {
             inst_name: '', tax_code: '', institution_type: '',
             inst_address: '', inst_city: '', inst_province: '',
             site_name: '', site_address: '', site_city: '', site_province: '',
+            min_years_experience: 0,
+            min_code_level_id: '',
             lodging_available: false, meal_support: false, parking_available: false,
             requires_independent_work: false, requires_emergency_vehicle: false,
-            min_years_experience: 0,
+            certReqs: {},
+            langReqs: [],
+            newLangId: '',
+            newLangProficiency: 2,
         },
 
         async init() {
@@ -29,9 +39,7 @@ document.addEventListener('alpine:init', () => {
         async load() {
             this.loading = true;
             try {
-                const data = await API.get('/institutions/', {
-                    skip: 0, limit: 200,
-                });
+                const data = await API.get('/institutions/', { skip: 0, limit: 200 });
                 this.institutions = data.items;
             } catch (e) {
                 console.error('Institutions load failed:', e);
@@ -56,7 +64,6 @@ document.addEventListener('alpine:init', () => {
                 this.requirements[instId] = reqs;
                 this.langRequirements[instId] = langReqs;
 
-                // Load shifts for each site (next 30 days)
                 const inst = this.institutions.find(i => i.id === instId);
                 if (inst?.sites) {
                     const now = new Date();
@@ -114,7 +121,63 @@ document.addEventListener('alpine:init', () => {
                 'CASA_DI_COMUNITA': 'Casa di Comunita',
                 'RSA': 'RSA',
             };
-            return labels[type] || type || 'N/D';
+            return labels[type?.toUpperCase()] || type || 'N/D';
+        },
+
+        proficiencyLabel(level) {
+            return ['', 'A1/A2', 'B1', 'B2', 'C1', 'C2/Madrelingua'][level] || level;
+        },
+
+        codeLevelLabel(cl) {
+            if (!cl) return '';
+            return cl.code;
+        },
+
+        async openStructureModal() {
+            if (!this.codeLevels.length) {
+                const [cls, cts, ls] = await Promise.all([
+                    API.get('/lookups/code-levels').catch(() => []),
+                    API.get('/lookups/certification-types').catch(() => []),
+                    API.get('/lookups/languages').catch(() => []),
+                ]);
+                this.codeLevels = cls.sort((a, b) => a.severity_order - b.severity_order);
+                this.certTypes = cts;
+                this.availableLangs = ls;
+            }
+            this.resetStructureForm();
+            this.structureModalOpen = true;
+        },
+
+        toggleCertReq(ctId, checked) {
+            this.newStructure.certReqs[ctId] = {
+                selected: checked,
+                is_mandatory: this.newStructure.certReqs[ctId]?.is_mandatory ?? true,
+            };
+        },
+
+        setCertMandatory(ctId, isMandatory) {
+            if (this.newStructure.certReqs[ctId]) {
+                this.newStructure.certReqs[ctId].is_mandatory = isMandatory;
+            }
+        },
+
+        addLangReq() {
+            const id = parseInt(this.newStructure.newLangId);
+            if (!id) return;
+            if (this.newStructure.langReqs.find(r => r.language_id === id)) return;
+            const lang = this.availableLangs.find(l => l.id === id);
+            if (!lang) return;
+            this.newStructure.langReqs.push({
+                language_id: lang.id,
+                language_name: lang.name,
+                min_proficiency: this.newStructure.newLangProficiency || 2,
+            });
+            this.newStructure.newLangId = '';
+            this.newStructure.newLangProficiency = 2;
+        },
+
+        removeLangReq(idx) {
+            this.newStructure.langReqs.splice(idx, 1);
         },
 
         async submitStructure() {
@@ -134,6 +197,7 @@ document.addEventListener('alpine:init', () => {
                     city: s.inst_city || null,
                     province: s.inst_province || null,
                 });
+
                 await API.post(`/institutions/${inst.id}/sites`, {
                     name: s.site_name,
                     address: s.site_address || null,
@@ -145,7 +209,27 @@ document.addEventListener('alpine:init', () => {
                     requires_independent_work: s.requires_independent_work,
                     requires_emergency_vehicle: s.requires_emergency_vehicle,
                     min_years_experience: s.min_years_experience || 0,
+                    min_code_level_id: s.min_code_level_id ? parseInt(s.min_code_level_id) : null,
                 });
+
+                // Certification requirements
+                for (const [ctId, req] of Object.entries(s.certReqs)) {
+                    if (req.selected) {
+                        await API.post(`/institutions/${inst.id}/requirements`, {
+                            certification_type_id: parseInt(ctId),
+                            is_mandatory: req.is_mandatory,
+                        }).catch(() => {});
+                    }
+                }
+
+                // Language requirements
+                for (const lr of s.langReqs) {
+                    await API.post(`/institutions/${inst.id}/language-requirements`, {
+                        language_id: lr.language_id,
+                        min_proficiency: lr.min_proficiency,
+                    }).catch(() => {});
+                }
+
                 this.structureModalOpen = false;
                 this.resetStructureForm();
                 await this.load();
@@ -160,9 +244,14 @@ document.addEventListener('alpine:init', () => {
                 inst_name: '', tax_code: '', institution_type: '',
                 inst_address: '', inst_city: '', inst_province: '',
                 site_name: '', site_address: '', site_city: '', site_province: '',
+                min_years_experience: 0,
+                min_code_level_id: '',
                 lodging_available: false, meal_support: false, parking_available: false,
                 requires_independent_work: false, requires_emergency_vehicle: false,
-                min_years_experience: 0,
+                certReqs: Object.fromEntries((this.certTypes || []).map(ct => [ct.id, { selected: false, is_mandatory: true }])),
+                langReqs: [],
+                newLangId: '',
+                newLangProficiency: 2,
             };
             this.structureError = '';
         },

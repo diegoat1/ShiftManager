@@ -1,4 +1,4 @@
-"""Seed reference data: certification types, languages, code levels, admin user."""
+"""Seed reference data: certification types, languages, code levels, admin user, institutions."""
 import asyncio
 
 from sqlalchemy import select
@@ -9,7 +9,8 @@ from app.models.doctor import (
     CertificationType,
     Language,
 )
-from app.models.requirement import CodeLevel
+from app.models.institution import Institution, InstitutionSite
+from app.models.requirement import CodeLevel, InstitutionLanguageRequirement
 from app.models.user import User
 from app.utils.enums import UserRole
 
@@ -82,6 +83,57 @@ async def seed():
                 password_hash=hash_password("Toffaletti26"),
                 role=UserRole.ADMIN,
             ))
+
+        # ASU FC – PS di Tolmezzo
+        existing_inst = await session.execute(
+            select(Institution).where(Institution.tax_code == "02985660303")
+        )
+        if not existing_inst.scalar_one_or_none():
+            inst = Institution(
+                name="Azienda Sanitaria Universitaria Friuli Centrale (ASU FC)",
+                tax_code="02985660303",
+                address="Via Pozzuolo, 330",
+                city="Udine",
+                province="UD",
+                institution_type="pronto_soccorso",
+            )
+            session.add(inst)
+            await session.flush()
+
+            # min_code_level: GREEN (codici bianchi e verdi)
+            cl_res = await session.execute(
+                select(CodeLevel).where(CodeLevel.code == "GREEN")
+            )
+            green_cl = cl_res.scalar_one_or_none()
+
+            site = InstitutionSite(
+                institution_id=inst.id,
+                name="Presidio Ospedaliero di Tolmezzo - S. Antonio Abate",
+                address="Via Morgagni, 18",
+                city="Tolmezzo",
+                province="UD",
+                lat=46.4022,
+                lon=13.0139,
+                min_code_level_id=green_cl.id if green_cl else None,
+                requires_independent_work=True,
+                min_years_experience=0,
+            )
+            session.add(site)
+            await session.flush()
+
+            # Italian B1 language requirement
+            lang_res = await session.execute(
+                select(Language).where(Language.code == "it")
+            )
+            italian = lang_res.scalar_one_or_none()
+            if italian:
+                session.add(InstitutionLanguageRequirement(
+                    institution_id=inst.id,
+                    language_id=italian.id,
+                    min_proficiency=2,  # B1
+                ))
+
+            print("ASU FC / PS di Tolmezzo created.")
 
         await session.commit()
         print("Seed data loaded successfully.")

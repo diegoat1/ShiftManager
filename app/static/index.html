@@ -691,7 +691,7 @@
                 <div x-data="institutionsPage">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-2xl font-bold text-slate-800">Strutture</h2>
-                        <button @click="structureModalOpen = true"
+                        <button @click="openStructureModal()"
                                 class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors">
                             + Struttura
                         </button>
@@ -815,15 +815,16 @@
                     <!-- Add Structure Modal -->
                     <template x-if="structureModalOpen">
                         <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="structureModalOpen = false">
-                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" @click.stop>
-                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" @click.stop>
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
                                     <h3 class="text-lg font-semibold text-slate-800">Aggiungi Struttura e Sede</h3>
                                     <button @click="structureModalOpen = false" class="text-slate-400 hover:text-slate-600">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
                                 <div class="p-5 space-y-4">
-                                    <h4 class="text-sm font-semibold text-slate-700">Istituzione</h4>
+                                    <!-- Istituzione -->
+                                    <h4 class="text-sm font-semibold text-slate-700 uppercase tracking-wide text-teal-700">Istituzione</h4>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div class="col-span-2"><label class="block text-xs text-slate-500 mb-1">Nome *</label><input type="text" x-model="newStructure.inst_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
                                         <div><label class="block text-xs text-slate-500 mb-1">Codice Fiscale *</label><input type="text" x-model="newStructure.tax_code" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
@@ -839,17 +840,27 @@
                                             </select>
                                         </div>
                                         <div><label class="block text-xs text-slate-500 mb-1">Indirizzo</label><input type="text" x-model="newStructure.inst_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
-                                        <div><label class="block text-xs text-slate-500 mb-1">Citta</label><input type="text" x-model="newStructure.inst_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Città</label><input type="text" x-model="newStructure.inst_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
                                         <div><label class="block text-xs text-slate-500 mb-1">Provincia</label><input type="text" x-model="newStructure.inst_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
                                     </div>
+
                                     <hr class="border-slate-200">
-                                    <h4 class="text-sm font-semibold text-slate-700">Sede</h4>
+                                    <!-- Sede -->
+                                    <h4 class="text-sm font-semibold uppercase tracking-wide text-teal-700">Sede</h4>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div class="col-span-2"><label class="block text-xs text-slate-500 mb-1">Nome Sede *</label><input type="text" x-model="newStructure.site_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
                                         <div><label class="block text-xs text-slate-500 mb-1">Indirizzo</label><input type="text" x-model="newStructure.site_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
-                                        <div><label class="block text-xs text-slate-500 mb-1">Citta</label><input type="text" x-model="newStructure.site_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Città</label><input type="text" x-model="newStructure.site_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
                                         <div><label class="block text-xs text-slate-500 mb-1">Provincia</label><input type="text" x-model="newStructure.site_province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
-                                        <div><label class="block text-xs text-slate-500 mb-1">Exp. Minima (anni)</label><input type="number" x-model.number="newStructure.min_years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Exp. minima (anni)</label><input type="number" x-model.number="newStructure.min_years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></div>
+                                        <div><label class="block text-xs text-slate-500 mb-1">Codice max gestito</label>
+                                            <select x-model="newStructure.min_code_level_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                                <option value="">-- Nessun limite --</option>
+                                                <template x-for="cl in codeLevels" :key="cl.id">
+                                                    <option :value="cl.id" x-text="cl.code + ' – ' + (cl.description || '')"></option>
+                                                </template>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="flex flex-wrap gap-4 text-sm">
                                         <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.lodging_available" class="rounded"> Alloggio</label>
@@ -858,7 +869,59 @@
                                         <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.requires_independent_work" class="rounded"> Lavoro autonomo</label>
                                         <label class="flex items-center gap-2"><input type="checkbox" x-model="newStructure.requires_emergency_vehicle" class="rounded"> Mezzo emergenza</label>
                                     </div>
-                                    <div x-show="structureError" class="text-sm text-red-600" x-text="structureError"></div>
+
+                                    <hr class="border-slate-200">
+                                    <!-- Certificazioni richieste -->
+                                    <h4 class="text-sm font-semibold uppercase tracking-wide text-teal-700">Certificazioni richieste</h4>
+                                    <div class="space-y-1 max-h-40 overflow-y-auto pr-1">
+                                        <template x-for="ct in certTypes" :key="ct.id">
+                                            <div class="flex items-center gap-3 text-sm py-1 border-b border-slate-100 last:border-0">
+                                                <input type="checkbox"
+                                                    :checked="newStructure.certReqs[ct.id]?.selected"
+                                                    @change="toggleCertReq(ct.id, $event.target.checked)"
+                                                    class="rounded flex-shrink-0">
+                                                <span class="flex-1 truncate" x-text="ct.name"></span>
+                                                <template x-if="newStructure.certReqs[ct.id]?.selected">
+                                                    <select @change="setCertMandatory(ct.id, $event.target.value === 'true')"
+                                                            class="text-xs border border-slate-300 rounded px-1.5 py-1 flex-shrink-0">
+                                                        <option value="true" :selected="newStructure.certReqs[ct.id]?.is_mandatory">Obbligatoria</option>
+                                                        <option value="false" :selected="!newStructure.certReqs[ct.id]?.is_mandatory">Preferibile</option>
+                                                    </select>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <hr class="border-slate-200">
+                                    <!-- Requisiti linguistici -->
+                                    <h4 class="text-sm font-semibold uppercase tracking-wide text-teal-700">Requisiti linguistici</h4>
+                                    <div class="flex gap-2">
+                                        <select x-model="newStructure.newLangId" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                            <option value="">Lingua...</option>
+                                            <template x-for="l in availableLangs" :key="l.id">
+                                                <option :value="l.id" x-text="l.name"></option>
+                                            </template>
+                                        </select>
+                                        <select x-model.number="newStructure.newLangProficiency" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                            <option value="1">A1/A2</option>
+                                            <option value="2">B1</option>
+                                            <option value="3">B2</option>
+                                            <option value="4">C1</option>
+                                            <option value="5">C2/Madrelingua</option>
+                                        </select>
+                                        <button @click="addLangReq()" class="px-3 py-2 bg-teal-50 text-teal-700 rounded-lg text-sm font-medium hover:bg-teal-100">+</button>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <template x-for="(lr, idx) in newStructure.langReqs" :key="idx">
+                                            <div class="flex items-center gap-2 text-sm bg-slate-50 rounded-lg px-3 py-1.5">
+                                                <span class="font-medium text-slate-700" x-text="lr.language_name"></span>
+                                                <span class="badge badge-blue text-xs" x-text="['','A1/A2','B1','B2','C1','C2'][lr.min_proficiency] || lr.min_proficiency"></span>
+                                                <button @click="removeLangReq(idx)" class="ml-auto text-red-400 hover:text-red-600 text-lg leading-none">×</button>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div x-show="structureError" class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2" x-text="structureError"></div>
                                     <div class="flex justify-end gap-2 pt-2">
                                         <button @click="structureModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
                                         <button @click="submitStructure()" :disabled="structureSaving" class="px-4 py-2 text-sm bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50">
