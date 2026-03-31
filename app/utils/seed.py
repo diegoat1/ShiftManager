@@ -96,7 +96,6 @@ async def seed():
                 address="Via Pozzuolo, 330",
                 city="Udine",
                 province="UD",
-                institution_type="pronto_soccorso",
             )
             session.add(inst)
             await session.flush()
