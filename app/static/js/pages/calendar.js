@@ -166,16 +166,22 @@ document.addEventListener('alpine:init', () => {
             }
             this.createSaving = true;
             try {
-                const startDt = new Date(`${s.date}T${s.startTime}:00`);
-                const endDt = new Date(`${s.date}T${s.endTime}:00`);
-                // If end is before start (e.g. night shift crossing midnight), add 1 day
-                if (endDt <= startDt) endDt.setDate(endDt.getDate() + 1);
+                // Build naive datetime strings (no timezone) to match TIMESTAMP WITHOUT TIME ZONE columns
+                let endDate = s.date;
+                const [sh, sm] = s.startTime.split(':').map(Number);
+                const [eh, em] = s.endTime.split(':').map(Number);
+                if (eh * 60 + em <= sh * 60 + sm) {
+                    // End crosses midnight — advance date by 1
+                    const d = new Date(s.date + 'T00:00:00');
+                    d.setDate(d.getDate() + 1);
+                    endDate = d.toISOString().split('T')[0];
+                }
 
                 const payload = {
                     site_id: this.selectedSite,
                     date: s.date,
-                    start_datetime: startDt.toISOString(),
-                    end_datetime: endDt.toISOString(),
+                    start_datetime: `${s.date}T${s.startTime}:00`,
+                    end_datetime: `${endDate}T${s.endTime}:00`,
                     required_doctors: parseInt(s.required_doctors) || 1,
                     base_pay: parseFloat(s.base_pay) || 0,
                     is_night: s.is_night,
