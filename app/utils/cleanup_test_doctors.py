@@ -7,6 +7,7 @@ import asyncio
 from sqlalchemy import delete, select
 
 from app.core.database import async_session_factory
+from app.models.cooperative import Cooperative  # noqa: F401 — needed for relationship resolution
 from app.models.user import User
 
 
