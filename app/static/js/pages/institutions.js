@@ -19,10 +19,10 @@ document.addEventListener('alpine:init', () => {
         structureSaving: false,
         structureError: '',
         newStructure: {
-            inst_name: '', tax_code: '', institution_type: '',
+            inst_name: '', tax_code: '',
             inst_address: '', inst_city: '', inst_province: '',
             cooperative_id: '',
-            site_name: '', site_address: '', site_city: '', site_province: '',
+            site_name: '', site_type: '', site_address: '', site_city: '', site_province: '',
             min_years_experience: 0,
             min_code_level_id: '',
             lodging_available: false, meal_support: false, parking_available: false,
@@ -257,7 +257,6 @@ document.addEventListener('alpine:init', () => {
                 const inst = await API.post('/institutions/', {
                     name: s.inst_name,
                     tax_code: s.tax_code,
-                    institution_type: s.institution_type || null,
                     address: s.inst_address || null,
                     city: s.inst_city || null,
                     province: s.inst_province || null,
@@ -266,6 +265,7 @@ document.addEventListener('alpine:init', () => {
 
                 await API.post(`/institutions/${inst.id}/sites`, {
                     name: s.site_name,
+                    site_type: s.site_type || null,
                     address: s.site_address || null,
                     city: s.site_city || null,
                     province: s.site_province || null,
@@ -307,10 +307,10 @@ document.addEventListener('alpine:init', () => {
 
         resetStructureForm() {
             this.newStructure = {
-                inst_name: '', tax_code: '', institution_type: '',
+                inst_name: '', tax_code: '',
                 inst_address: '', inst_city: '', inst_province: '',
                 cooperative_id: '',
-                site_name: '', site_address: '', site_city: '', site_province: '',
+                site_name: '', site_type: '', site_address: '', site_city: '', site_province: '',
                 min_years_experience: 0,
                 min_code_level_id: '',
                 lodging_available: false, meal_support: false, parking_available: false,

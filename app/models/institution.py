@@ -16,7 +16,6 @@ class Institution(TimestampMixin, Base):
     address: Mapped[str | None] = mapped_column(String(300))
     city: Mapped[str | None] = mapped_column(String(100))
     province: Mapped[str | None] = mapped_column(String(2))
-    institution_type: Mapped[str | None] = mapped_column(String(50))
     is_active: Mapped[bool] = mapped_column(default=True)
     cooperative_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("cooperatives.id", ondelete="SET NULL"), nullable=True)
 
@@ -45,6 +44,7 @@ class InstitutionSite(TimestampMixin, Base):
     requires_independent_work: Mapped[bool] = mapped_column(default=False)
     requires_emergency_vehicle: Mapped[bool] = mapped_column(default=False)
     min_years_experience: Mapped[int] = mapped_column(default=0)
+    site_type: Mapped[str | None] = mapped_column(String(50))
 
     institution: Mapped["Institution"] = relationship(back_populates="sites")
     min_code_level: Mapped["CodeLevel | None"] = relationship(foreign_keys=[min_code_level_id])

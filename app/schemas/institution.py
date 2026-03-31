@@ -10,7 +10,6 @@ class InstitutionCreate(BaseModel):
     address: str | None = None
     city: str | None = None
     province: str | None = None
-    institution_type: str | None = None
     cooperative_id: uuid.UUID | None = None
 
 
@@ -19,13 +18,13 @@ class InstitutionUpdate(BaseModel):
     address: str | None = None
     city: str | None = None
     province: str | None = None
-    institution_type: str | None = None
     is_active: bool | None = None
     cooperative_id: uuid.UUID | None = None
 
 
 class SiteCreate(BaseModel):
     name: str
+    site_type: str | None = None
     address: str | None = None
     city: str | None = None
     province: str | None = None
@@ -42,6 +41,7 @@ class SiteCreate(BaseModel):
 
 class SiteUpdate(BaseModel):
     name: str | None = None
+    site_type: str | None = None
     address: str | None = None
     city: str | None = None
     province: str | None = None
@@ -61,6 +61,7 @@ class SiteRead(BaseModel):
     id: uuid.UUID
     institution_id: uuid.UUID
     name: str
+    site_type: str | None
     address: str | None
     city: str | None
     province: str | None
@@ -84,7 +85,6 @@ class InstitutionRead(BaseModel):
     address: str | None
     city: str | None
     province: str | None
-    institution_type: str | None
     is_active: bool
     cooperative_id: uuid.UUID | None = None
     created_at: datetime
