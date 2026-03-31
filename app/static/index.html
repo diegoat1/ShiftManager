@@ -427,7 +427,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="doc in filtered" :key="doc.id">
+                                    <template x-for="doc in doctors" :key="doc.id">
                                         <tr @click="selectDoctor(doc.id)"
                                             :class="selectedDoctor?.id === doc.id ? 'active' : ''"
                                             class="border-b border-slate-100 cursor-pointer">
@@ -440,7 +440,7 @@
                                             </td>
                                         </tr>
                                     </template>
-                                    <tr x-show="filtered.length === 0">
+                                    <tr x-show="doctors.length === 0">
                                         <td colspan="4" class="px-4 py-8 text-center text-slate-400">Nessun medico trovato</td>
                                     </tr>
                                 </tbody>
@@ -474,9 +474,14 @@
                                         <span class="text-xs text-slate-500 font-mono" x-text="selectedDoctor.fiscal_code"></span>
                                     </div>
                                 </div>
-                                <button @click="closeDetail()" class="text-slate-400 hover:text-slate-600">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button @click="openEditModal(selectedDoctor)" class="text-slate-400 hover:text-blue-600" title="Modifica">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button @click="closeDetail()" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <div x-show="detailLoading" class="flex justify-center py-6"><div class="spinner"></div></div>
@@ -518,29 +523,77 @@
                                             <div class="flex justify-between"><dt class="text-slate-500">Ricollocarsi:</dt><dd x-text="selectedDoctor.willing_to_relocate ? 'Si' : 'No'"></dd></div>
                                             <div class="flex justify-between"><dt class="text-slate-500">Pernottamento:</dt><dd x-text="selectedDoctor.willing_overnight_stay ? 'Si' : 'No'"></dd></div>
                                         </dl>
-                                        <h4 class="text-sm font-medium text-slate-500 mt-4 mb-2">Certificazioni</h4>
-                                        <template x-if="selectedDoctor.certifications?.length > 0">
-                                            <ul class="space-y-1">
-                                                <template x-for="cert in selectedDoctor.certifications" :key="cert.id">
-                                                    <li class="text-sm flex items-center gap-2">
-                                                        <span :class="cert.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="cert.certification_type?.name || ('Tipo #' + cert.certification_type_id)"></span>
-                                                        <span x-show="cert.expiry_date" class="text-xs text-slate-400" x-text="'scade ' + fmtDate(cert.expiry_date)"></span>
-                                                    </li>
+                                        <div class="flex items-center justify-between mt-4 mb-2">
+                                            <h4 class="text-sm font-medium text-slate-500">Certificazioni</h4>
+                                            <button @click="addCertOpen = !addCertOpen; newCert = {certTypeId:'',obtainedDate:'',expiryDate:''}" class="text-xs text-blue-600 hover:text-blue-800 font-medium">+ Aggiungi</button>
+                                        </div>
+                                        <ul class="space-y-1 mb-2">
+                                            <template x-for="cert in (selectedDoctor.certifications || [])" :key="cert.id">
+                                                <li class="text-sm flex items-center gap-2">
+                                                    <span :class="cert.is_active ? 'badge-green' : 'badge-red'" class="badge" x-text="cert.certification_type?.name || certTypeName(cert.certification_type_id)"></span>
+                                                    <span x-show="cert.expiry_date" class="text-xs text-slate-400" x-text="'scade ' + fmtDate(cert.expiry_date)"></span>
+                                                    <button @click="removeCert(cert.certification_type_id)" class="ml-auto text-slate-300 hover:text-red-500 text-xs">×</button>
+                                                </li>
+                                            </template>
+                                            <template x-if="!selectedDoctor.certifications?.length"><li class="text-sm text-slate-400">Nessuna</li></template>
+                                        </ul>
+                                        <div x-show="addCertOpen" class="bg-slate-50 rounded-lg p-3 space-y-2 text-sm">
+                                            <select x-model="newCert.certTypeId" class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                                <option value="">Tipo certificazione...</option>
+                                                <template x-for="ct in availableCertTypes" :key="ct.id">
+                                                    <option :value="ct.id" x-text="ct.name"></option>
                                                 </template>
-                                            </ul>
-                                        </template>
-                                        <template x-if="!selectedDoctor.certifications?.length"><p class="text-sm text-slate-400">Nessuna</p></template>
+                                            </select>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div><label class="text-xs text-slate-500">Data ottenimento *</label><input type="date" x-model="newCert.obtainedDate" class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"></div>
+                                                <div><label class="text-xs text-slate-500">Scadenza</label><input type="date" x-model="newCert.expiryDate" class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"></div>
+                                            </div>
+                                            <div class="flex justify-end gap-2">
+                                                <button @click="addCertOpen = false" class="px-3 py-1 text-xs border rounded hover:bg-slate-100">Annulla</button>
+                                                <button @click="saveCert()" :disabled="certSaving || !newCert.certTypeId || !newCert.obtainedDate" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                                                    <span x-show="!certSaving">Salva</span><span x-show="certSaving">...</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div>
-                                        <h4 class="text-sm font-medium text-slate-500 mb-2">Lingue</h4>
-                                        <template x-if="selectedDoctor.languages?.length > 0">
-                                            <ul class="space-y-1 mb-4">
-                                                <template x-for="lang in selectedDoctor.languages" :key="lang.id">
-                                                    <li class="text-sm"><span class="badge badge-blue" x-text="(lang.language?.name || lang.language_id) + ' (Liv. ' + lang.proficiency_level + ')'"></span></li>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="text-sm font-medium text-slate-500">Lingue</h4>
+                                            <button @click="addLangOpen = !addLangOpen; newLang = {langId:'',proficiency:3}" class="text-xs text-blue-600 hover:text-blue-800 font-medium">+ Aggiungi</button>
+                                        </div>
+                                        <ul class="space-y-1 mb-2">
+                                            <template x-for="lang in (selectedDoctor.languages || [])" :key="lang.id">
+                                                <li class="text-sm flex items-center gap-2">
+                                                    <span class="badge badge-blue" x-text="(lang.language?.name || langName(lang.language_id)) + ' (Liv. ' + lang.proficiency_level + ')'"></span>
+                                                    <button @click="removeLang(lang.language_id)" class="ml-auto text-slate-300 hover:text-red-500 text-xs">×</button>
+                                                </li>
+                                            </template>
+                                            <template x-if="!selectedDoctor.languages?.length"><li class="text-sm text-slate-400">Nessuna</li></template>
+                                        </ul>
+                                        <div x-show="addLangOpen" class="bg-slate-50 rounded-lg p-3 space-y-2 text-sm mb-3">
+                                            <select x-model="newLang.langId" class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                                <option value="">Lingua...</option>
+                                                <template x-for="l in availableLangOptions" :key="l.id">
+                                                    <option :value="l.id" x-text="l.name"></option>
                                                 </template>
-                                            </ul>
-                                        </template>
-                                        <template x-if="!selectedDoctor.languages?.length"><p class="text-sm text-slate-400 mb-4">Nessuna</p></template>
+                                            </select>
+                                            <div>
+                                                <label class="text-xs text-slate-500">Livello CEFR</label>
+                                                <select x-model.number="newLang.proficiency" class="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                                    <option value="1">1 - A1/A2</option>
+                                                    <option value="2">2 - B1</option>
+                                                    <option value="3">3 - B2</option>
+                                                    <option value="4">4 - C1</option>
+                                                    <option value="5">5 - C2/Madrelingua</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex justify-end gap-2">
+                                                <button @click="addLangOpen = false" class="px-3 py-1 text-xs border rounded hover:bg-slate-100">Annulla</button>
+                                                <button @click="saveLang()" :disabled="langSaving || !newLang.langId" class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                                                    <span x-show="!langSaving">Salva</span><span x-show="langSaving">...</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                         <template x-if="selectedDoctor.preferences">
                                             <div>
                                                 <h4 class="text-sm font-medium text-slate-500 mb-2">Preferenze</h4>
@@ -677,6 +730,70 @@
                                         <button @click="doctorModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
                                         <button @click="submitDoctor()" :disabled="doctorSaving" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
                                             <span x-show="!doctorSaving">Salva</span><span x-show="doctorSaving">Salvataggio...</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Edit Doctor Modal -->
+                    <template x-if="editModalOpen">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="editModalOpen = false">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+                                    <h3 class="text-lg font-semibold text-slate-800">Modifica Medico</h3>
+                                    <button @click="editModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="p-5 space-y-5">
+                                    <!-- Dati personali -->
+                                    <div>
+                                        <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Dati personali</h4>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div><label class="block text-xs text-slate-500 mb-1">Nome</label><input type="text" x-model="editDoctor.first_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Cognome</label><input type="text" x-model="editDoctor.last_name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Email</label><input type="email" x-model="editDoctor.email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Telefono</label><input type="text" x-model="editDoctor.phone" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Data nascita</label><input type="date" x-model="editDoctor.birth_date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Residenza</label><input type="text" x-model="editDoctor.residence_address" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Domicilio</label><input type="text" x-model="editDoctor.domicile_city" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Provincia Ordine</label><input type="text" x-model="editDoctor.ordine_province" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">N° Ordine</label><input type="text" x-model="editDoctor.ordine_number" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                        </div>
+                                    </div>
+                                    <!-- Parametri lavoro -->
+                                    <div>
+                                        <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Parametri lavoro</h4>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div><label class="block text-xs text-slate-500 mb-1">Anni esperienza</label><input type="number" x-model.number="editDoctor.years_experience" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Max turni/mese</label><input type="number" x-model.number="editDoctor.max_shifts_per_month" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Max notturni/mese</label><input type="number" x-model.number="editDoctor.max_night_shifts_per_month" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Max distanza (km)</label><input type="number" x-model.number="editDoctor.max_distance_km" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                            <div><label class="block text-xs text-slate-500 mb-1">Codice max gestito</label>
+                                                <select x-model.number="editDoctor.max_code_level_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                    <option value="">Nessun limite</option>
+                                                    <template x-for="cl in codeLevels" :key="cl.id">
+                                                        <option :value="cl.id" x-text="cl.code"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap gap-4 text-sm mt-3">
+                                            <label class="flex items-center gap-2"><input type="checkbox" x-model="editDoctor.can_work_alone" class="rounded"> Lavoro autonomo</label>
+                                            <label class="flex items-center gap-2"><input type="checkbox" x-model="editDoctor.can_emergency_vehicle" class="rounded"> Mezzo emergenza</label>
+                                            <label class="flex items-center gap-2"><input type="checkbox" x-model="editDoctor.willing_to_relocate" class="rounded"> Disponibile a trasferirsi</label>
+                                            <label class="flex items-center gap-2"><input type="checkbox" x-model="editDoctor.willing_overnight_stay" class="rounded"> Pernottamento</label>
+                                            <label class="flex items-center gap-2"><input type="checkbox" x-model="editDoctor.has_own_vehicle" class="rounded"> Veicolo proprio</label>
+                                            <label class="flex items-center gap-2"><input type="checkbox" x-model="editDoctor.is_active" class="rounded"> Attivo</label>
+                                        </div>
+                                    </div>
+                                    <div x-show="editError" class="text-sm text-red-600" x-text="editError"></div>
+                                    <div class="flex justify-end gap-2 pt-2">
+                                        <button @click="editModalOpen = false" class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annulla</button>
+                                        <button @click="saveEdit()" :disabled="editSaving" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
+                                            <span x-show="!editSaving">Salva modifiche</span><span x-show="editSaving">Salvataggio...</span>
                                         </button>
                                     </div>
                                 </div>

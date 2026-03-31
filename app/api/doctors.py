@@ -28,8 +28,8 @@ async def create_doctor(data: DoctorCreate, svc: DoctorSvc, admin: RequireAdmin)
 
 
 @router.get("/", response_model=PaginatedResponse[DoctorBrief])
-async def list_doctors(svc: DoctorSvc, admin: RequireAdmin, skip: int = 0, limit: int = 50):
-    items, total = await svc.get_all(skip=skip, limit=limit)
+async def list_doctors(svc: DoctorSvc, admin: RequireAdmin, skip: int = 0, limit: int = 50, search: str | None = None):
+    items, total = await svc.get_all(skip=skip, limit=limit, search=search)
     return PaginatedResponse(items=items, total=total, skip=skip, limit=limit)
 
 

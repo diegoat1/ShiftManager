@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -11,6 +11,37 @@ from app.repositories.base import BaseRepository
 class DoctorRepository(BaseRepository[Doctor]):
     def __init__(self, session: AsyncSession):
         super().__init__(Doctor, session)
+
+    async def get_all(self, skip: int = 0, limit: int = 50, search: str | None = None, **filters):  # type: ignore[override]
+        stmt = select(Doctor)
+        if search:
+            q = f"%{search}%"
+            stmt = stmt.where(
+                or_(
+                    Doctor.first_name.ilike(q),
+                    Doctor.last_name.ilike(q),
+                    Doctor.fiscal_code.ilike(q),
+                    Doctor.email.ilike(q),
+                )
+            )
+        stmt = stmt.offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
+    async def count(self, search: str | None = None, **filters) -> int:  # type: ignore[override]
+        stmt = select(func.count()).select_from(Doctor)
+        if search:
+            q = f"%{search}%"
+            stmt = stmt.where(
+                or_(
+                    Doctor.first_name.ilike(q),
+                    Doctor.last_name.ilike(q),
+                    Doctor.fiscal_code.ilike(q),
+                    Doctor.email.ilike(q),
+                )
+            )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def get_by_email(self, email: str) -> Doctor | None:
         result = await self.session.execute(select(Doctor).where(Doctor.email == email))

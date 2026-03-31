@@ -72,9 +72,9 @@ class DoctorService:
     async def get(self, doctor_id: uuid.UUID) -> Doctor | None:
         return await self.repo.get_with_relations(doctor_id)
 
-    async def get_all(self, skip: int = 0, limit: int = 50):
-        doctors = await self.repo.get_all(skip=skip, limit=limit)
-        total = await self.repo.count()
+    async def get_all(self, skip: int = 0, limit: int = 50, search: str | None = None):
+        doctors = await self.repo.get_all(skip=skip, limit=limit, search=search)
+        total = await self.repo.count(search=search)
         return doctors, total
 
     async def update(self, doctor_id: uuid.UUID, data: DoctorUpdate) -> Doctor | None:
