@@ -24,6 +24,16 @@ document.addEventListener('alpine:init', () => {
         modalLoading: false,
         assigning: false,
 
+        // Create shift modal
+        createOpen: false,
+        createSaving: false,
+        createError: '',
+        newShift: {
+            date: '', startTime: '08:00', endTime: '20:00',
+            required_doctors: 2, base_pay: 0, is_night: false,
+            shift_type: '', status: 'open',
+        },
+
         async init() {
             try {
                 const data = await API.get('/institutions/', { skip: 0, limit: 200 });
@@ -132,6 +142,57 @@ document.addEventListener('alpine:init', () => {
             } catch (e) {
                 alert('Errore: ' + e.message);
             }
+        },
+
+        openCreate() {
+            if (!this.selectedSite) {
+                Alpine.store('app').toast('Seleziona una sede prima di creare un turno', 'error');
+                return;
+            }
+            // Default date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            this.newShift.date = tomorrow.toISOString().split('T')[0];
+            this.createError = '';
+            this.createOpen = true;
+        },
+
+        async submitCreate() {
+            this.createError = '';
+            const s = this.newShift;
+            if (!s.date || !s.startTime || !s.endTime) {
+                this.createError = 'Data, ora inizio e ora fine sono obbligatori.';
+                return;
+            }
+            this.createSaving = true;
+            try {
+                const startDt = new Date(`${s.date}T${s.startTime}:00`);
+                const endDt = new Date(`${s.date}T${s.endTime}:00`);
+                // If end is before start (e.g. night shift crossing midnight), add 1 day
+                if (endDt <= startDt) endDt.setDate(endDt.getDate() + 1);
+
+                const payload = {
+                    site_id: this.selectedSite,
+                    date: s.date,
+                    start_datetime: startDt.toISOString(),
+                    end_datetime: endDt.toISOString(),
+                    required_doctors: parseInt(s.required_doctors) || 1,
+                    base_pay: parseFloat(s.base_pay) || 0,
+                    is_night: s.is_night,
+                    shift_type: s.shift_type || null,
+                };
+                const created = await API.post('/shifts/', payload);
+                // If status is 'open', update it (default is 'draft')
+                if (s.status === 'open') {
+                    await API.patch(`/shifts/${created.id}`, { status: 'open' });
+                }
+                this.createOpen = false;
+                if (this.calendar) this.calendar.refetchEvents();
+                Alpine.store('app').toast('Turno creato!', 'success');
+            } catch (e) {
+                this.createError = 'Errore: ' + e.message;
+            }
+            this.createSaving = false;
         },
 
         fmtDt(dt) {

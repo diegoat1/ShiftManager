@@ -1081,6 +1081,11 @@
                                     </optgroup>
                                 </template>
                             </select>
+                            <button @click="openCreate()"
+                                    class="btn-primary flex items-center gap-2 whitespace-nowrap">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                Nuovo Turno
+                            </button>
                         </div>
                     </div>
 
@@ -1242,6 +1247,67 @@
                                         <template x-if="modalEligible.filter(d => d.eligibility.is_eligible).length === 0">
                                             <p class="text-sm text-slate-400">Nessun medico eleggibile</p>
                                         </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Create Shift Modal -->
+                    <template x-if="createOpen">
+                        <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="createOpen = false">
+                            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md" @click.stop>
+                                <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-slate-800">Nuovo Turno</h3>
+                                    <button @click="createOpen = false" class="text-slate-400 hover:text-slate-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="p-5 space-y-4">
+                                    <div x-show="createError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600" x-text="createError"></div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="col-span-2">
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Data *</label>
+                                            <input type="date" x-model="newShift.date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Ora inizio *</label>
+                                            <input type="time" x-model="newShift.startTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Ora fine *</label>
+                                            <input type="time" x-model="newShift.endTime" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Medici richiesti</label>
+                                            <input type="number" x-model="newShift.required_doctors" min="1" max="20" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Paga base (€)</label>
+                                            <input type="number" x-model="newShift.base_pay" min="0" step="10" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Tipo turno</label>
+                                            <input type="text" x-model="newShift.shift_type" placeholder="es. Mattino, Notte..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-600 mb-1">Stato iniziale</label>
+                                            <select x-model="newShift.status" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <option value="draft">Bozza</option>
+                                                <option value="open">Aperto</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-span-2 flex items-center gap-2">
+                                            <input type="checkbox" id="isNight" x-model="newShift.is_night" class="rounded border-slate-300">
+                                            <label for="isNight" class="text-sm text-slate-700">Turno notturno</label>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end gap-3 pt-2">
+                                        <button @click="createOpen = false" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">Annulla</button>
+                                        <button @click="submitCreate()" :disabled="createSaving" class="btn-primary disabled:opacity-50">
+                                            <span x-show="!createSaving">Crea Turno</span>
+                                            <span x-show="createSaving">Salvataggio...</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
