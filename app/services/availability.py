@@ -20,13 +20,13 @@ class AvailabilityService:
             end_time=data.end_time,
             availability_type=data.availability_type,
         )
-        await self.session.commit()
+
         return avail
 
     async def bulk_set_availability(self, doctor_id: uuid.UUID, data: BulkAvailabilityCreate):
         entries = [e.model_dump() for e in data.entries]
         result = await self.repo.bulk_create(doctor_id, entries)
-        await self.session.commit()
+
         return result
 
     async def get_availability(self, doctor_id: uuid.UUID, start: date, end: date):
@@ -39,7 +39,7 @@ class AvailabilityService:
             end_date=data.end_date,
             reason=data.reason,
         )
-        await self.session.commit()
+
         return unav
 
     async def get_unavailabilities(self, doctor_id: uuid.UUID, start: date | None = None, end: date | None = None):
@@ -50,7 +50,7 @@ class AvailabilityService:
         if not avail or avail.doctor_id != doctor_id:
             return False
         await self.repo.delete(avail)
-        await self.session.commit()
+
         return True
 
     async def delete_unavailability(self, doctor_id: uuid.UUID, unavailability_id: int) -> bool:
@@ -59,5 +59,5 @@ class AvailabilityService:
             return False
         await self.session.delete(unav)
         await self.session.flush()
-        await self.session.commit()
+
         return True

@@ -24,12 +24,7 @@ async def list_cooperatives(repo: Repo, search: str | None = None, skip: int = 0
 
 @router.post("/", response_model=CooperativeRead, status_code=201)
 async def create_cooperative(data: CooperativeCreate, repo: Repo, admin: RequireAdmin):
-    from app.models.cooperative import Cooperative
-    coop = Cooperative(**data.model_dump())
-    repo.session.add(coop)
-    await repo.session.flush()
-    await repo.session.refresh(coop)
-    return coop
+    return await repo.create(data)
 
 
 @router.get("/{coop_id}", response_model=CooperativeRead)
@@ -45,11 +40,7 @@ async def update_cooperative(coop_id: uuid.UUID, data: CooperativeUpdate, repo: 
     coop = await repo.get_by_id(coop_id)
     if not coop:
         raise HTTPException(404, "Cooperative not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(coop, k, v)
-    await repo.session.flush()
-    await repo.session.refresh(coop)
-    return coop
+    return await repo.update(coop, data)
 
 
 @router.delete("/{coop_id}", status_code=204)
@@ -57,4 +48,4 @@ async def delete_cooperative(coop_id: uuid.UUID, repo: Repo, admin: RequireAdmin
     coop = await repo.get_by_id(coop_id)
     if not coop:
         raise HTTPException(404, "Cooperative not found")
-    await repo.session.delete(coop)
+    await repo.delete(coop)

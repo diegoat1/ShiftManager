@@ -39,7 +39,7 @@ class DocumentService:
             issued_at=issued_at,
             expires_at=expires_at,
         )
-        await self.session.commit()
+
         return doc
 
     async def delete_document(self, doc_id: uuid.UUID, doctor_id: uuid.UUID) -> bool:
@@ -49,7 +49,7 @@ class DocumentService:
         if doc.verification_status != VerificationStatus.PENDING:
             return False
         await self.repo.delete(doc)
-        await self.session.commit()
+
         return True
 
     async def get_all_documents(self, skip: int = 0, limit: int = 50, status: str | None = None):
@@ -67,7 +67,7 @@ class DocumentService:
         doc.verified_at = datetime.utcnow()
         doc.rejection_reason = None
         await self.session.flush()
-        await self.session.commit()
+
         return doc
 
     async def reject(self, doc_id: uuid.UUID, verified_by: uuid.UUID, reason: str) -> Document | None:
@@ -79,7 +79,7 @@ class DocumentService:
         doc.verified_at = datetime.utcnow()
         doc.rejection_reason = reason
         await self.session.flush()
-        await self.session.commit()
+
         return doc
 
     async def get_document_types(self):

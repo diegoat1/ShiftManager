@@ -21,7 +21,7 @@ class InstitutionService:
 
     async def create(self, data: InstitutionCreate) -> Institution:
         inst = await self.repo.create(**data.model_dump())
-        await self.session.commit()
+
         return await self.repo.get_with_sites(inst.id)
 
     async def get(self, institution_id: uuid.UUID) -> Institution | None:
@@ -37,7 +37,7 @@ class InstitutionService:
         if not inst:
             return None
         await self.repo.update(inst, **data.model_dump(exclude_unset=True))
-        await self.session.commit()
+
         return await self.repo.get_with_sites(institution_id)
 
     async def delete(self, institution_id: uuid.UUID) -> bool:
@@ -45,13 +45,13 @@ class InstitutionService:
         if not inst:
             return False
         await self.repo.delete(inst)
-        await self.session.commit()
+
         return True
 
     # Sites
     async def create_site(self, institution_id: uuid.UUID, data: SiteCreate) -> InstitutionSite:
         site = await self.repo.create_site(institution_id, **data.model_dump())
-        await self.session.commit()
+
         return site
 
     async def get_site(self, site_id: uuid.UUID) -> InstitutionSite | None:
@@ -65,7 +65,7 @@ class InstitutionService:
             if value is not None:
                 setattr(site, key, value)
         await self.session.flush()
-        await self.session.commit()
+
         return site
 
     async def get_sites(self, institution_id: uuid.UUID):
@@ -76,7 +76,7 @@ class InstitutionService:
         if not site:
             return False
         await self.session.delete(site)
-        await self.session.commit()
+
         return True
 
     # Requirements
@@ -84,7 +84,7 @@ class InstitutionService:
         req = await self.repo.add_requirement(
             institution_id, certification_type_id=data.certification_type_id, is_mandatory=data.is_mandatory
         )
-        await self.session.commit()
+
         return req
 
     async def get_requirements(self, institution_id: uuid.UUID):
@@ -94,7 +94,7 @@ class InstitutionService:
         req = await self.repo.add_language_requirement(
             institution_id, language_id=data.language_id, min_proficiency=data.min_proficiency
         )
-        await self.session.commit()
+
         return req
 
     async def get_language_requirements(self, institution_id: uuid.UUID):

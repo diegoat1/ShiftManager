@@ -27,7 +27,7 @@ class AuthService:
 
         user.last_login_at = datetime.utcnow()
         await self.session.flush()
-        await self.session.commit()
+
 
         token = create_access_token(str(user.id))
         return LoginResponse(access_token=token)
@@ -60,7 +60,7 @@ class AuthService:
             self.session.add(doctor)
             await self.session.flush()
 
-        await self.session.commit()
+
 
         token = create_access_token(str(user.id))
         return LoginResponse(access_token=token)

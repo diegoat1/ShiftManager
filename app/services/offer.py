@@ -46,7 +46,6 @@ class OfferService:
         if shift and shift.status == ShiftStatus.OPEN:
             await self.shift_repo.update(shift, status=ShiftStatus.PROPOSING)
 
-        await self.session.commit()
         return offer
 
     async def send_batch(
@@ -58,17 +57,41 @@ class OfferService:
         scores: dict[uuid.UUID, int] | None = None,
         proposed_by: uuid.UUID | None = None,
     ) -> list[ShiftOffer]:
-        offers = []
-        for doctor_id in doctor_ids:
-            try:
-                rank = ranks.get(doctor_id) if ranks else None
-                score = scores.get(doctor_id) if scores else None
-                offer = await self.send_offer(
-                    shift_id, doctor_id, expires_in_hours, rank, score, proposed_by
-                )
-                offers.append(offer)
-            except ValueError:
-                continue
+        if not doctor_ids:
+            return []
+
+        now = datetime.utcnow()
+        expires_at = now + timedelta(hours=expires_in_hours)
+
+        # One query: find doctors that already have an offer for this shift
+        already_offered = await self.repo.get_existing_for_doctors(shift_id, doctor_ids)
+        new_ids = [did for did in doctor_ids if did not in already_offered]
+
+        if not new_ids:
+            return []
+
+        # Build all offer objects and insert in one statement
+        offers = [
+            ShiftOffer(
+                shift_id=shift_id,
+                doctor_id=did,
+                status=OfferStatus.PROPOSED,
+                offered_at=now,
+                expires_at=expires_at,
+                rank_snapshot=ranks.get(did) if ranks else None,
+                score_snapshot=scores.get(did) if scores else None,
+                proposed_by=proposed_by,
+            )
+            for did in new_ids
+        ]
+        self.session.add_all(offers)
+        await self.session.flush()
+
+        # Update shift status once
+        shift = await self.shift_repo.get_by_id(shift_id)
+        if shift and shift.status == ShiftStatus.OPEN:
+            await self.shift_repo.update(shift, status=ShiftStatus.PROPOSING)
+
         return offers
 
     async def accept(self, offer_id: uuid.UUID) -> ShiftOffer | None:
@@ -82,13 +105,14 @@ class OfferService:
         offer.responded_at = datetime.utcnow()
         await self.session.flush()
 
-        # Auto-create assignment
+        # Auto-create assignment — must succeed or we roll back the offer status change
         assignment_svc = AssignmentService(self.session)
-        assignment, _ = await assignment_svc.assign(
+        assignment, result = await assignment_svc.assign(
             AssignmentCreate(shift_id=offer.shift_id, doctor_id=offer.doctor_id)
         )
+        if assignment is None:
+            raise ValueError(f"Doctor is not eligible for this shift: {'; '.join(result.reasons)}")
 
-        await self.session.commit()
         return offer
 
     async def reject(self, offer_id: uuid.UUID, response_note: str | None = None) -> ShiftOffer | None:
@@ -102,7 +126,6 @@ class OfferService:
         offer.responded_at = datetime.utcnow()
         offer.response_note = response_note
         await self.session.flush()
-        await self.session.commit()
         return offer
 
     async def cancel(self, offer_id: uuid.UUID) -> ShiftOffer | None:
@@ -114,7 +137,6 @@ class OfferService:
 
         offer.status = OfferStatus.CANCELLED
         await self.session.flush()
-        await self.session.commit()
         return offer
 
     async def expire_stale(self) -> int:
@@ -133,7 +155,6 @@ class OfferService:
                 if shift and shift.status == ShiftStatus.PROPOSING:
                     await self.shift_repo.update(shift, status=ShiftStatus.UNCOVERED)
 
-        await self.session.commit()
         return len(expired)
 
     async def get_by_shift(self, shift_id: uuid.UUID) -> list[ShiftOffer]:

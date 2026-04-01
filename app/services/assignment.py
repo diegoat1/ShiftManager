@@ -54,7 +54,6 @@ class AssignmentService:
         elif active_count > 0:
             await self.shift_repo.update(shift, status=ShiftStatus.PARTIALLY_FILLED)
 
-        await self.session.commit()
         return assignment, result
 
     async def unassign(self, assignment_id: uuid.UUID) -> bool:
@@ -71,7 +70,6 @@ class AssignmentService:
         elif active_count < shift.required_doctors:
             await self.shift_repo.update(shift, status=ShiftStatus.PARTIALLY_FILLED)
 
-        await self.session.commit()
         return True
 
     async def check_eligibility(self, doctor_id: uuid.UUID, shift_id: uuid.UUID) -> EligibilityResult:
@@ -188,7 +186,6 @@ class AssignmentService:
         elif active_count > 0:
             await self.shift_repo.update(shift, status=ShiftStatus.PARTIALLY_FILLED)
 
-        await self.session.commit()
         return assignment, result
 
     async def get_available_shifts_for_doctor(

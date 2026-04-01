@@ -32,7 +32,7 @@ async def generate_calendar_token(
     """Generate or regenerate a dedicated calendar feed token."""
     token = secrets.token_urlsafe(48)
     doctor.calendar_feed_token = token
-    await session.commit()
+    await session.flush()
     return {"token": token}
 
 

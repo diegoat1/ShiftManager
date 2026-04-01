@@ -46,7 +46,7 @@ async def list_certification_types(session: DbSession):
 async def create_certification_type(data: CertificationTypeCreate, session: DbSession):
     ct = CertificationType(**data.model_dump())
     session.add(ct)
-    await session.commit()
+    await session.flush()
     await session.refresh(ct)
     return ct
 
@@ -61,7 +61,7 @@ async def list_languages(session: DbSession):
 async def create_language(data: LanguageCreate, session: DbSession):
     lang = Language(**data.model_dump())
     session.add(lang)
-    await session.commit()
+    await session.flush()
     await session.refresh(lang)
     return lang
 
@@ -76,6 +76,6 @@ async def list_code_levels(session: DbSession):
 async def create_code_level(data: CodeLevelCreate, session: DbSession):
     cl = CodeLevel(**data.model_dump())
     session.add(cl)
-    await session.commit()
+    await session.flush()
     await session.refresh(cl)
     return cl

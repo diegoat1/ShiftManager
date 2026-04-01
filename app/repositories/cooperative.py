@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.cooperative import Cooperative
 from app.repositories.base import BaseRepository
+from app.schemas.cooperative import CooperativeCreate, CooperativeUpdate
 
 
 class CooperativeRepository(BaseRepository[Cooperative]):
@@ -45,3 +46,21 @@ class CooperativeRepository(BaseRepository[Cooperative]):
             select(Cooperative).where(Cooperative.partita_iva == partita_iva)
         )
         return result.scalar_one_or_none()
+
+    async def create(self, data: CooperativeCreate) -> Cooperative:
+        coop = Cooperative(**data.model_dump())
+        self.session.add(coop)
+        await self.session.flush()
+        await self.session.refresh(coop)
+        return coop
+
+    async def update(self, coop: Cooperative, data: CooperativeUpdate) -> Cooperative:
+        for k, v in data.model_dump(exclude_unset=True).items():
+            setattr(coop, k, v)
+        await self.session.flush()
+        await self.session.refresh(coop)
+        return coop
+
+    async def delete(self, coop: Cooperative) -> None:
+        await self.session.delete(coop)
+        await self.session.flush()

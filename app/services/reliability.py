@@ -84,7 +84,7 @@ class ReliabilityService:
             self.session.add(stats)
             await self.session.flush()
 
-        await self.session.commit()
+
         return stats
 
     async def recalculate_all(self) -> int:

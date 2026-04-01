@@ -39,7 +39,7 @@ class ShiftService:
             # Inherit operational fields from site if not explicitly set on shift
             self._inherit_site_fields(shift, site)
 
-        await self.session.commit()
+
         return await self.repo.get_with_requirements(shift.id)
 
     async def get(self, shift_id: uuid.UUID) -> Shift | None:
@@ -55,7 +55,7 @@ class ShiftService:
         if not shift:
             return None
         await self.repo.update(shift, **data.model_dump(exclude_unset=True))
-        await self.session.commit()
+
         return await self.repo.get_with_requirements(shift_id)
 
     async def delete(self, shift_id: uuid.UUID) -> bool:
@@ -63,21 +63,21 @@ class ShiftService:
         if not shift:
             return False
         await self.repo.delete(shift)
-        await self.session.commit()
+
         return True
 
     async def add_requirement(self, shift_id: uuid.UUID, data: ShiftRequirementCreate):
         req = await self.repo.add_requirement(
             shift_id, certification_type_id=data.certification_type_id, is_mandatory=data.is_mandatory
         )
-        await self.session.commit()
+
         return req
 
     async def add_language_requirement(self, shift_id: uuid.UUID, data: ShiftLanguageRequirementCreate):
         req = await self.repo.add_language_requirement(
             shift_id, language_id=data.language_id, min_proficiency=data.min_proficiency
         )
-        await self.session.commit()
+
         return req
 
     @staticmethod
@@ -98,7 +98,7 @@ class ShiftService:
     # Templates
     async def create_template(self, **kwargs):
         tmpl = await self.repo.create_template(**kwargs)
-        await self.session.commit()
+
         return tmpl
 
     async def get_templates(self, site_id: uuid.UUID):
@@ -109,7 +109,7 @@ class ShiftService:
         if not tmpl:
             return False
         await self.session.delete(tmpl)
-        await self.session.commit()
+
         return True
 
     async def generate_shifts(self, data: GenerateShiftsRequest) -> list[Shift]:
@@ -161,5 +161,5 @@ class ShiftService:
                 created.append(shift)
             current += timedelta(days=1)
 
-        await self.session.commit()
+
         return created

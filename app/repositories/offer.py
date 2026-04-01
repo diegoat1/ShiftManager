@@ -70,6 +70,15 @@ class OfferRepository(BaseRepository[ShiftOffer]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_existing_for_doctors(self, shift_id: uuid.UUID, doctor_ids: list[uuid.UUID]) -> set[uuid.UUID]:
+        """Return the set of doctor_ids that already have any offer for this shift."""
+        stmt = select(ShiftOffer.doctor_id).where(
+            ShiftOffer.shift_id == shift_id,
+            ShiftOffer.doctor_id.in_(doctor_ids),
+        )
+        result = await self.session.execute(stmt)
+        return set(result.scalars().all())
+
     async def count_by_doctor(self, doctor_id: uuid.UUID, status: OfferStatus | None = None) -> int:
         stmt = select(func.count()).select_from(ShiftOffer).where(ShiftOffer.doctor_id == doctor_id)
         if status:

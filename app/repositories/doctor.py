@@ -12,7 +12,7 @@ class DoctorRepository(BaseRepository[Doctor]):
     def __init__(self, session: AsyncSession):
         super().__init__(Doctor, session)
 
-    async def get_all(self, skip: int = 0, limit: int = 50, search: str | None = None, **filters):  # type: ignore[override]
+    async def get_all(self, skip: int = 0, limit: int = 50, search: str | None = None, is_active: bool | None = None):  # type: ignore[override]
         stmt = select(Doctor)
         if search:
             q = f"%{search}%"
@@ -24,11 +24,13 @@ class DoctorRepository(BaseRepository[Doctor]):
                     Doctor.email.ilike(q),
                 )
             )
+        if is_active is not None:
+            stmt = stmt.where(Doctor.is_active == is_active)
         stmt = stmt.offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def count(self, search: str | None = None, **filters) -> int:  # type: ignore[override]
+    async def count(self, search: str | None = None, is_active: bool | None = None) -> int:  # type: ignore[override]
         stmt = select(func.count()).select_from(Doctor)
         if search:
             q = f"%{search}%"
@@ -40,6 +42,8 @@ class DoctorRepository(BaseRepository[Doctor]):
                     Doctor.email.ilike(q),
                 )
             )
+        if is_active is not None:
+            stmt = stmt.where(Doctor.is_active == is_active)
         result = await self.session.execute(stmt)
         return result.scalar_one()
 

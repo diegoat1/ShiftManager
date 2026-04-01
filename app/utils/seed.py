@@ -1,5 +1,6 @@
 """Seed reference data: certification types, languages, code levels, admin user, institutions."""
 import asyncio
+import os
 
 from sqlalchemy import select
 
@@ -74,16 +75,21 @@ async def seed():
             if not existing.scalar_one_or_none():
                 session.add(CodeLevel(**cl_data))
 
-        # Main admin user
-        existing_admin = await session.execute(
-            select(User).where(User.email == "datoffaletti@gmail.com")
-        )
-        if not existing_admin.scalar_one_or_none():
-            session.add(User(
-                email="datoffaletti@gmail.com",
-                password_hash=hash_password("Toffaletti26"),
-                role=UserRole.ADMIN,
-            ))
+        # Main admin user — credentials from environment variables
+        admin_email = os.environ.get("ADMIN_EMAIL")
+        admin_password = os.environ.get("ADMIN_PASSWORD")
+        if admin_email and admin_password:
+            existing_admin = await session.execute(
+                select(User).where(User.email == admin_email)
+            )
+            if not existing_admin.scalar_one_or_none():
+                session.add(User(
+                    email=admin_email,
+                    password_hash=hash_password(admin_password),
+                    role=UserRole.ADMIN,
+                ))
+        else:
+            print("WARNING: ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping admin user creation.")
 
         # ASU FC – PS di Tolmezzo
         existing_inst = await session.execute(

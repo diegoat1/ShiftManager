@@ -57,7 +57,7 @@ class MessageService:
             recipient_id=recipient_id,
             body=body,
         )
-        await self.session.commit()
+
         return msg
 
     async def get_conversations(self, user_id: uuid.UUID) -> list[dict]:
@@ -70,7 +70,7 @@ class MessageService:
 
     async def mark_conversation_read(self, user_id: uuid.UUID, other_user_id: uuid.UUID) -> int:
         count = await self.repo.mark_conversation_read(user_id, other_user_id)
-        await self.session.commit()
+
         return count
 
     async def unread_count(self, user_id: uuid.UUID) -> int:

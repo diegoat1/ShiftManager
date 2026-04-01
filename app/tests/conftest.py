@@ -41,7 +41,11 @@ async def session():
 @pytest.fixture
 async def client(session):
     async def override_session():
-        yield session
+        # Mirror production's session.begin(): commit savepoint on success,
+        # roll back to savepoint on exception — without touching the outer
+        # test transaction that fixture setup data lives in.
+        async with session.begin_nested():
+            yield session
 
     app.dependency_overrides[get_session] = override_session
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:

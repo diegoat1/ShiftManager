@@ -34,7 +34,7 @@ class DoctorService:
             can_emergency_vehicle=data.can_emergency_vehicle,
             years_experience=data.years_experience,
         )
-        await self.session.commit()
+
         return await self.repo.get_with_relations(doctor.id)
 
     async def get_by_user_id(self, user_id: uuid.UUID) -> Doctor | None:
@@ -54,7 +54,7 @@ class DoctorService:
             setattr(doctor, key, value)
         doctor.profile_completion_percent = self._calc_profile_completion(doctor)
         await self.session.flush()
-        await self.session.commit()
+
         return await self.repo.get_with_relations(doctor_id)
 
     @staticmethod
@@ -82,7 +82,7 @@ class DoctorService:
         if not doctor:
             return None
         await self.repo.update(doctor, **data.model_dump(exclude_unset=True))
-        await self.session.commit()
+
         return await self.repo.get_with_relations(doctor_id)
 
     async def delete(self, doctor_id: uuid.UUID) -> bool:
@@ -90,7 +90,7 @@ class DoctorService:
         if not doctor:
             return False
         await self.repo.delete(doctor)
-        await self.session.commit()
+
         return True
 
     async def add_certification(self, doctor_id: uuid.UUID, data: CertificationCreate):
@@ -100,12 +100,12 @@ class DoctorService:
             obtained_date=data.obtained_date,
             expiry_date=data.expiry_date,
         )
-        await self.session.commit()
+
         return cert
 
     async def remove_certification(self, doctor_id: uuid.UUID, cert_type_id: int) -> bool:
         result = await self.repo.remove_certification(doctor_id, cert_type_id)
-        await self.session.commit()
+
         return result
 
     async def add_language(self, doctor_id: uuid.UUID, data: DoctorLanguageCreate):
@@ -114,12 +114,12 @@ class DoctorService:
             language_id=data.language_id,
             proficiency_level=data.proficiency_level,
         )
-        await self.session.commit()
+
         return lang
 
     async def remove_language(self, doctor_id: uuid.UUID, language_id: int) -> bool:
         result = await self.repo.remove_language(doctor_id, language_id)
-        await self.session.commit()
+
         return result
 
     async def get_certifications(self, doctor_id: uuid.UUID):
@@ -133,5 +133,5 @@ class DoctorService:
 
     async def upsert_preferences(self, doctor_id: uuid.UUID, data: DoctorPreferenceCreate) -> DoctorPreference:
         pref = await self.repo.upsert_preferences(doctor_id, **data.model_dump())
-        await self.session.commit()
+
         return pref

@@ -29,7 +29,7 @@ class NotificationService:
             related_entity_type=related_entity_type,
             related_entity_id=related_entity_id,
         )
-        await self.session.commit()
+
         return notif
 
     async def get_by_user(self, user_id: uuid.UUID, skip: int = 0, limit: int = 50):
@@ -45,10 +45,10 @@ class NotificationService:
         notif.status = "read"
         notif.read_at = datetime.utcnow()
         await self.session.flush()
-        await self.session.commit()
+
         return True
 
     async def mark_all_read(self, user_id: uuid.UUID) -> int:
         count = await self.repo.mark_all_read(user_id)
-        await self.session.commit()
+
         return count

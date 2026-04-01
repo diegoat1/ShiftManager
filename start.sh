@@ -37,11 +37,33 @@ done
 echo "Running Alembic migrations..."
 alembic upgrade head
 
-echo "Running seed data..."
-python -m app.utils.seed
+echo "Checking whether to run seed..."
+RUN_SEED_REASON=""
+if [ "${RUN_SEED:-false}" = "true" ]; then
+    RUN_SEED_REASON="RUN_SEED=true"
+else
+    # First-boot detection: seed if code_levels table is empty
+    COUNT=$(python -c "
+import asyncio, sys
+from app.core.database import async_session_factory
+from sqlalchemy import text
+async def count():
+    async with async_session_factory() as s:
+        r = await s.execute(text('SELECT COUNT(*) FROM code_levels'))
+        return r.scalar()
+print(asyncio.run(count()))
+" 2>/dev/null || echo "0")
+    if [ "$COUNT" = "0" ]; then
+        RUN_SEED_REASON="first boot (code_levels is empty)"
+    fi
+fi
 
-echo "Cleaning up test doctors (@medici.test)..."
-python -m app.utils.cleanup_test_doctors
+if [ -n "$RUN_SEED_REASON" ]; then
+    echo "Running seed data ($RUN_SEED_REASON)..."
+    python -m app.utils.seed
+else
+    echo "Skipping seed (set RUN_SEED=true to force)."
+fi
 
 echo "Starting uvicorn on port ${PORT:-8000}..."
 exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
