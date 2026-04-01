@@ -57,12 +57,12 @@ async def delete_shift(shift_id: uuid.UUID, svc: ShiftSvc, admin: RequireAdmin):
 
 
 @router.post("/{shift_id}/requirements", status_code=201)
-async def add_requirement(shift_id: uuid.UUID, data: ShiftRequirementCreate, svc: ShiftSvc):
+async def add_requirement(shift_id: uuid.UUID, data: ShiftRequirementCreate, svc: ShiftSvc, admin: RequireAdmin):
     return await svc.add_requirement(shift_id, data)
 
 
 @router.post("/{shift_id}/language-requirements", status_code=201)
-async def add_language_requirement(shift_id: uuid.UUID, data: ShiftLanguageRequirementCreate, svc: ShiftSvc):
+async def add_language_requirement(shift_id: uuid.UUID, data: ShiftLanguageRequirementCreate, svc: ShiftSvc, admin: RequireAdmin):
     return await svc.add_language_requirement(shift_id, data)
 
 
@@ -79,7 +79,7 @@ async def get_calendar(
 
 # Templates
 @router.post("/templates", response_model=TemplateRead, status_code=201)
-async def create_template(data: TemplateCreate, svc: ShiftSvc):
+async def create_template(data: TemplateCreate, svc: ShiftSvc, admin: RequireAdmin):
     return await svc.create_template(**data.model_dump())
 
 

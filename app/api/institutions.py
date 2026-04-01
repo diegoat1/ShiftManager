@@ -69,7 +69,7 @@ async def list_sites(institution_id: uuid.UUID, svc: InstSvc):
 
 
 @router.patch("/sites/{site_id}", response_model=SiteRead)
-async def update_site(site_id: uuid.UUID, data: SiteUpdate, svc: InstSvc):
+async def update_site(site_id: uuid.UUID, data: SiteUpdate, svc: InstSvc, admin: RequireAdmin):
     site = await svc.update_site(site_id, data)
     if not site:
         raise HTTPException(404, "Site not found")
@@ -84,7 +84,7 @@ async def delete_site(site_id: uuid.UUID, svc: InstSvc, admin: RequireAdmin):
 
 # Requirements
 @router.post("/{institution_id}/requirements", response_model=RequirementRead, status_code=201)
-async def add_requirement(institution_id: uuid.UUID, data: RequirementCreate, svc: InstSvc):
+async def add_requirement(institution_id: uuid.UUID, data: RequirementCreate, svc: InstSvc, admin: RequireAdmin):
     return await svc.add_requirement(institution_id, data)
 
 
@@ -94,7 +94,7 @@ async def list_requirements(institution_id: uuid.UUID, svc: InstSvc):
 
 
 @router.post("/{institution_id}/language-requirements", response_model=LanguageRequirementRead, status_code=201)
-async def add_language_requirement(institution_id: uuid.UUID, data: LanguageRequirementCreate, svc: InstSvc):
+async def add_language_requirement(institution_id: uuid.UUID, data: LanguageRequirementCreate, svc: InstSvc, admin: RequireAdmin):
     return await svc.add_language_requirement(institution_id, data)
 
 

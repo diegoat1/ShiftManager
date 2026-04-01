@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.deps import get_availability_service
+from app.api.deps import RequireAdmin, get_availability_service
 from app.schemas.availability import (
     AvailabilityCreate,
     AvailabilityRead,
@@ -20,12 +20,12 @@ AvailSvc = Annotated[AvailabilityService, Depends(get_availability_service)]
 
 
 @router.post("/availability", response_model=AvailabilityRead, status_code=201)
-async def set_availability(doctor_id: uuid.UUID, data: AvailabilityCreate, svc: AvailSvc):
+async def set_availability(doctor_id: uuid.UUID, data: AvailabilityCreate, svc: AvailSvc, admin: RequireAdmin):
     return await svc.set_availability(doctor_id, data)
 
 
 @router.post("/availability/bulk", status_code=201)
-async def bulk_set_availability(doctor_id: uuid.UUID, data: BulkAvailabilityCreate, svc: AvailSvc):
+async def bulk_set_availability(doctor_id: uuid.UUID, data: BulkAvailabilityCreate, svc: AvailSvc, admin: RequireAdmin):
     return await svc.bulk_set_availability(doctor_id, data)
 
 
@@ -33,6 +33,7 @@ async def bulk_set_availability(doctor_id: uuid.UUID, data: BulkAvailabilityCrea
 async def get_availability(
     doctor_id: uuid.UUID,
     svc: AvailSvc,
+    admin: RequireAdmin,
     start: date = Query(...),
     end: date = Query(...),
 ):
@@ -40,7 +41,7 @@ async def get_availability(
 
 
 @router.post("/unavailability", response_model=UnavailabilityRead, status_code=201)
-async def create_unavailability(doctor_id: uuid.UUID, data: UnavailabilityCreate, svc: AvailSvc):
+async def create_unavailability(doctor_id: uuid.UUID, data: UnavailabilityCreate, svc: AvailSvc, admin: RequireAdmin):
     return await svc.create_unavailability(doctor_id, data)
 
 
@@ -48,6 +49,7 @@ async def create_unavailability(doctor_id: uuid.UUID, data: UnavailabilityCreate
 async def get_unavailabilities(
     doctor_id: uuid.UUID,
     svc: AvailSvc,
+    admin: RequireAdmin,
     start: date | None = None,
     end: date | None = None,
 ):

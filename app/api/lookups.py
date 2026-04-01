@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, RequireAdmin
 from app.models.doctor import CertificationType, Language
 from app.models.requirement import CodeLevel
 from app.schemas.doctor import CertificationTypeRead, LanguageRead
@@ -43,7 +43,7 @@ async def list_certification_types(session: DbSession):
 
 
 @router.post("/certification-types", response_model=CertificationTypeRead, status_code=201)
-async def create_certification_type(data: CertificationTypeCreate, session: DbSession):
+async def create_certification_type(data: CertificationTypeCreate, session: DbSession, admin: RequireAdmin):
     ct = CertificationType(**data.model_dump())
     session.add(ct)
     await session.flush()
@@ -58,7 +58,7 @@ async def list_languages(session: DbSession):
 
 
 @router.post("/languages", response_model=LanguageRead, status_code=201)
-async def create_language(data: LanguageCreate, session: DbSession):
+async def create_language(data: LanguageCreate, session: DbSession, admin: RequireAdmin):
     lang = Language(**data.model_dump())
     session.add(lang)
     await session.flush()
@@ -73,7 +73,7 @@ async def list_code_levels(session: DbSession):
 
 
 @router.post("/code-levels", response_model=CodeLevelRead, status_code=201)
-async def create_code_level(data: CodeLevelCreate, session: DbSession):
+async def create_code_level(data: CodeLevelCreate, session: DbSession, admin: RequireAdmin):
     cl = CodeLevel(**data.model_dump())
     session.add(cl)
     await session.flush()
