@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shiftmanager-v1';
+const CACHE_NAME = 'shiftmanager-v2';
 
 const SHELL_ASSETS = [
     '/',
@@ -65,15 +65,17 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Static assets: cache-first
+    // Static assets: network-first, fallback to cache
+    // (cache-first would serve stale JS after every deploy)
     if (url.pathname.startsWith('/static/')) {
         event.respondWith(
-            caches.match(event.request)
-                .then(cached => cached || fetch(event.request).then(response => {
+            fetch(event.request)
+                .then(response => {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
                     return response;
-                }))
+                })
+                .catch(() => caches.match(event.request))
         );
         return;
     }
