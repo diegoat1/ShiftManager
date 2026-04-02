@@ -974,7 +974,7 @@
                                                                             <input type="date" x-model="generateStart[site.id]" class="px-2 py-1 border rounded text-xs">
                                                                             <span class="text-xs text-slate-500">al</span>
                                                                             <input type="date" x-model="generateEnd[site.id]" class="px-2 py-1 border rounded text-xs">
-                                                                            <button @click="generateFromTemplates(site.id)" :disabled="generatingShifts[site.id]" class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50" x-text="generatingShifts[site.id] ? 'Generando...' : 'Genera'"></button>
+                                                                            <button @click="generateFromTemplates(site.id)" :disabled="!!generatingShifts[site.id]" class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50" x-text="generatingShifts[site.id] ? 'Generando...' : 'Genera'"></button>
                                                                         </div>
                                                                     </div>
                                                                 </template>

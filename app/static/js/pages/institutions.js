@@ -398,6 +398,9 @@ document.addEventListener('alpine:init', () => {
             try {
                 const templates = await API.get(`/shifts/templates/${siteId}`);
                 this.siteTemplates = { ...this.siteTemplates, [siteId]: templates };
+                if (this.generateStart[siteId] === undefined) this.generateStart = { ...this.generateStart, [siteId]: '' };
+                if (this.generateEnd[siteId] === undefined) this.generateEnd = { ...this.generateEnd, [siteId]: '' };
+                if (this.generatingShifts[siteId] === undefined) this.generatingShifts = { ...this.generatingShifts, [siteId]: false };
             } catch (e) {
                 console.error('Templates load failed:', e);
             }
