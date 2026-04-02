@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.institution import InstitutionSite
 from app.models.shift import Shift, ShiftLanguageRequirement, ShiftRequirement, ShiftTemplate
 from app.repositories.base import BaseRepository
 from app.utils.enums import ShiftStatus
@@ -62,6 +63,69 @@ class ShiftRepository(BaseRepository[Shift]):
         stmt = stmt.order_by(Shift.start_datetime)
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def get_recent_site_affinity_for_doctor(
+        self,
+        doctor_id: uuid.UUID,
+        since: datetime,
+    ) -> tuple[set[uuid.UUID], set[uuid.UUID]]:
+        """Return (recent_site_ids, recent_institution_ids) for doctor's shifts since `since`.
+
+        No assignment status filter — preserves get_doctor_shifts() semantics
+        (CANCELLED assignments still count toward site affinity).
+        1 query.
+        """
+        from app.models.assignment import ShiftAssignment
+
+        stmt = (
+            select(Shift.site_id, InstitutionSite.institution_id)
+            .join(ShiftAssignment, ShiftAssignment.shift_id == Shift.id)
+            .join(InstitutionSite, Shift.site_id == InstitutionSite.id)
+            .where(
+                ShiftAssignment.doctor_id == doctor_id,
+                Shift.start_datetime >= since,
+            )
+            .distinct()
+        )
+        result = await self.session.execute(stmt)
+        rows = result.all()
+        site_ids = {row[0] for row in rows}
+        inst_ids = {row[1] for row in rows}
+        return site_ids, inst_ids
+
+    async def bulk_get_recent_site_affinity_for_doctors(
+        self,
+        doctor_ids: list[uuid.UUID],
+        since: datetime,
+    ) -> dict[uuid.UUID, tuple[set[uuid.UUID], set[uuid.UUID]]]:
+        """Return dict[doctor_id -> (recent_site_ids, recent_institution_ids)].
+
+        No assignment status filter — preserves get_doctor_shifts() semantics.
+        1 query for all N doctors.
+        """
+        if not doctor_ids:
+            return {}
+        from app.models.assignment import ShiftAssignment
+
+        stmt = (
+            select(ShiftAssignment.doctor_id, Shift.site_id, InstitutionSite.institution_id)
+            .join(ShiftAssignment, ShiftAssignment.shift_id == Shift.id)
+            .join(InstitutionSite, Shift.site_id == InstitutionSite.id)
+            .where(
+                ShiftAssignment.doctor_id.in_(doctor_ids),
+                Shift.start_datetime >= since,
+            )
+            .distinct()
+        )
+        result = await self.session.execute(stmt)
+
+        out: dict[uuid.UUID, tuple[set[uuid.UUID], set[uuid.UUID]]] = {
+            did: (set(), set()) for did in doctor_ids
+        }
+        for row in result.all():
+            out[row[0]][0].add(row[1])  # site_id
+            out[row[0]][1].add(row[2])  # institution_id
+        return out
 
     async def add_requirement(self, shift_id: uuid.UUID, **kwargs) -> ShiftRequirement:
         req = ShiftRequirement(shift_id=shift_id, **kwargs)

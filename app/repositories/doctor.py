@@ -55,6 +55,28 @@ class DoctorRepository(BaseRepository[Doctor]):
         result = await self.session.execute(select(Doctor).where(Doctor.fiscal_code == fiscal_code))
         return result.scalar_one_or_none()
 
+    async def get_all_with_relations(
+        self,
+        is_active: bool | None = None,
+        doctor_ids: list[uuid.UUID] | None = None,
+        limit: int = 1000,
+    ) -> list[Doctor]:
+        stmt = (
+            select(Doctor)
+            .options(
+                selectinload(Doctor.certifications).selectinload(DoctorCertification.certification_type),
+                selectinload(Doctor.languages).selectinload(DoctorLanguage.language),
+                selectinload(Doctor.preferences),
+            )
+        )
+        if is_active is not None:
+            stmt = stmt.where(Doctor.is_active == is_active)
+        if doctor_ids is not None:
+            stmt = stmt.where(Doctor.id.in_(doctor_ids))
+        stmt = stmt.limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().unique().all())
+
     async def get_with_relations(self, doctor_id: uuid.UUID) -> Doctor | None:
         stmt = (
             select(Doctor)

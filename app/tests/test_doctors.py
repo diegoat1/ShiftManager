@@ -77,7 +77,7 @@ async def test_delete_doctor(client, admin_headers):
 @pytest.mark.asyncio
 async def test_add_certification(client, admin_headers):
     # Create lookup
-    ct = await client.post("/api/v1/lookups/certification-types", json={"name": "BLS", "validity_months": 24})
+    ct = await client.post("/api/v1/lookups/certification-types", json={"name": "BLS", "validity_months": 24}, headers=admin_headers)
     ct_id = ct.json()["id"]
 
     doc = await client.post("/api/v1/doctors/", json={
@@ -95,7 +95,7 @@ async def test_add_certification(client, admin_headers):
 
 @pytest.mark.asyncio
 async def test_add_language(client, admin_headers):
-    lang = await client.post("/api/v1/lookups/languages", json={"code": "it", "name": "Italiano"})
+    lang = await client.post("/api/v1/lookups/languages", json={"code": "it", "name": "Italiano"}, headers=admin_headers)
     lang_id = lang.json()["id"]
 
     doc = await client.post("/api/v1/doctors/", json={

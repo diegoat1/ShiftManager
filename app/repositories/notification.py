@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import Notification
 from app.repositories.base import BaseRepository
+from app.utils.dates import utcnow_naive
 
 
 class NotificationRepository(BaseRepository[Notification]):
@@ -39,7 +40,7 @@ class NotificationRepository(BaseRepository[Notification]):
         )
         result = await self.session.execute(stmt)
         notifications = result.scalars().all()
-        now = datetime.utcnow()
+        now = utcnow_naive()
         for n in notifications:
             n.status = "read"
             n.read_at = now

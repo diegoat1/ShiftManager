@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from app.utils.dates import utcnow_naive
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,7 +64,7 @@ class DocumentService:
             return None
         doc.verification_status = VerificationStatus.APPROVED
         doc.verified_by = verified_by
-        doc.verified_at = datetime.utcnow()
+        doc.verified_at = utcnow_naive()
         doc.rejection_reason = None
         await self.session.flush()
 
@@ -76,7 +76,7 @@ class DocumentService:
             return None
         doc.verification_status = VerificationStatus.REJECTED
         doc.verified_by = verified_by
-        doc.verified_at = datetime.utcnow()
+        doc.verified_at = utcnow_naive()
         doc.rejection_reason = reason
         await self.session.flush()
 

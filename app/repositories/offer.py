@@ -1,12 +1,11 @@
 import uuid
-from datetime import datetime
-
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.offer import ShiftOffer
 from app.repositories.base import BaseRepository
+from app.utils.dates import utcnow_naive
 from app.utils.enums import OfferStatus
 
 
@@ -50,7 +49,7 @@ class OfferRepository(BaseRepository[ShiftOffer]):
         return list(result.scalars().all())
 
     async def get_expired(self) -> list[ShiftOffer]:
-        now = datetime.utcnow()
+        now = utcnow_naive()
         stmt = (
             select(ShiftOffer)
             .where(
@@ -61,6 +60,26 @@ class OfferRepository(BaseRepository[ShiftOffer]):
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_pending_offer_shift_ids_for_doctor(
+        self,
+        doctor_id: uuid.UUID,
+        shift_ids: list[uuid.UUID],
+    ) -> set[uuid.UUID]:
+        """Return shift_ids where doctor has a PROPOSED|VIEWED offer.
+
+        Replicates the has_pending_offer semantics from get_existing() + status check.
+        """
+        if not shift_ids:
+            return set()
+        result = await self.session.execute(
+            select(ShiftOffer.shift_id).where(
+                ShiftOffer.doctor_id == doctor_id,
+                ShiftOffer.shift_id.in_(shift_ids),
+                ShiftOffer.status.in_([OfferStatus.PROPOSED, OfferStatus.VIEWED]),
+            )
+        )
+        return set(result.scalars().all())
 
     async def get_existing(self, shift_id: uuid.UUID, doctor_id: uuid.UUID) -> ShiftOffer | None:
         stmt = select(ShiftOffer).where(

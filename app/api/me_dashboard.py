@@ -1,10 +1,11 @@
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentDoctor, DbSession, get_offer_service
+from app.utils.dates import utcnow_naive
 from app.api.me_assignments import _to_my_assignment
 from app.api.me_offers import _offer_to_read
 from app.models.doctor import DoctorCertification
@@ -27,7 +28,7 @@ async def get_my_dashboard(
     session: DbSession,
     offer_svc: OfferService = Depends(get_offer_service),
 ):
-    now = datetime.utcnow()
+    now = utcnow_naive()
     today = date.today()
 
     repo = AssignmentRepository(session)

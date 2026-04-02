@@ -46,7 +46,7 @@ async def test_list_sites(client, admin_headers):
 
 @pytest.mark.asyncio
 async def test_add_requirement(client, admin_headers):
-    ct = await client.post("/api/v1/lookups/certification-types", json={"name": "BLS"})
+    ct = await client.post("/api/v1/lookups/certification-types", json={"name": "BLS"}, headers=admin_headers)
     ct_id = ct.json()["id"]
 
     inst = await client.post("/api/v1/institutions/", json={

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from app.utils.dates import utcnow_naive
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,7 +43,7 @@ class NotificationService:
         if not notif or notif.user_id != user_id:
             return False
         notif.status = "read"
-        notif.read_at = datetime.utcnow()
+        notif.read_at = utcnow_naive()
         await self.session.flush()
 
         return True

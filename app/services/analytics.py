@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from app.utils.dates import utcnow_naive
+
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,7 +61,7 @@ class AnalyticsService:
 
     async def get_kpis_by_month(self, year: int | None = None) -> list[MonthlyKPI]:
         if not year:
-            year = datetime.utcnow().year
+            year = utcnow_naive().year
 
         months = []
         for month in range(1, 13):

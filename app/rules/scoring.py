@@ -1,16 +1,18 @@
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.doctor import Doctor
 from app.models.institution import Institution, InstitutionSite
 from app.models.reliability import DoctorReliabilityStats
 from app.models.shift import Shift
 from app.repositories.assignment import AssignmentRepository
 from app.repositories.availability import AvailabilityRepository
 from app.repositories.doctor import DoctorRepository
+from app.repositories.reliability import ReliabilityRepository
 from app.repositories.shift import ShiftRepository
 from app.utils.distance import haversine
 from app.utils.enums import AvailabilityType
@@ -69,6 +71,98 @@ class ScoredDoctor:
     can_emergency_vehicle: bool = False
 
 
+# ---------------------------------------------------------------------------
+# Scoring context (1 doctor × N shifts)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class DoctorShiftsScoringContext:
+    """Pre-loaded data for scoring one doctor across many shifts.
+
+    Built by ``DoctorShiftsScoringContextBuilder.build()`` and consumed
+    synchronously by ``MatchScorer.score_with_context()``.
+    """
+
+    doctor: Doctor  # with certifications, languages, preferences
+    availability_type_by_shift_id: dict[uuid.UUID, AvailabilityType | None]
+    monthly_shift_count_by_month: dict[tuple[int, int], int]  # (year, month) → count
+    recent_site_ids_90d: set[uuid.UUID]
+    recent_institution_ids_90d: set[uuid.UUID]
+    reliability_score: float | None
+
+
+class DoctorShiftsScoringContextBuilder:
+    """Builds a DoctorShiftsScoringContext for one doctor across N shifts.
+
+    When called after the eligibility builder, fires only 3 NEW queries
+    (availability types, site affinity, reliability). Monthly counts are
+    reused from the eligibility context via the optional parameter.
+    """
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.avail_repo = AvailabilityRepository(session)
+        self.shift_repo = ShiftRepository(session)
+        self.assignment_repo = AssignmentRepository(session)
+
+    async def build(
+        self,
+        doctor: Doctor,
+        shifts: list,  # list[Shift]
+        monthly_shift_count_by_month: dict[tuple[int, int], int] | None = None,
+    ) -> DoctorShiftsScoringContext:
+        if not shifts:
+            return DoctorShiftsScoringContext(
+                doctor=doctor,
+                availability_type_by_shift_id={},
+                monthly_shift_count_by_month=monthly_shift_count_by_month or {},
+                recent_site_ids_90d=set(),
+                recent_institution_ids_90d=set(),
+                reliability_score=None,
+            )
+
+        # Q1 — raw availability type per shift (1 query, no unavailability check)
+        availability_type_by_shift_id = (
+            await self.avail_repo.bulk_availability_type_for_doctor_and_shifts(doctor.id, shifts)
+        )
+
+        # Q2 — site affinity: recent site_ids + institution_ids (1 query)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        since_90d = now - timedelta(days=90)
+        recent_site_ids, recent_inst_ids = (
+            await self.shift_repo.get_recent_site_affinity_for_doctor(doctor.id, since_90d)
+        )
+
+        # Q3 — reliability score (1 query)
+        rel_result = await self.session.execute(
+            select(DoctorReliabilityStats.reliability_score).where(
+                DoctorReliabilityStats.doctor_id == doctor.id
+            )
+        )
+        reliability_score = rel_result.scalar_one_or_none()
+
+        # Monthly counts — reuse from eligibility context or load fresh
+        if monthly_shift_count_by_month is None:
+            unique_months = {(s.date.year, s.date.month) for s in shifts}
+            monthly_shift_count_by_month = {}
+            for year, month in unique_months:
+                counts = await self.assignment_repo.bulk_shifts_in_month([doctor.id], year, month)
+                monthly_shift_count_by_month[(year, month)] = counts.get(doctor.id, 0)
+
+        return DoctorShiftsScoringContext(
+            doctor=doctor,
+            availability_type_by_shift_id=availability_type_by_shift_id,
+            monthly_shift_count_by_month=monthly_shift_count_by_month,
+            recent_site_ids_90d=recent_site_ids,
+            recent_institution_ids_90d=recent_inst_ids,
+            reliability_score=reliability_score,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Scorer
+# ---------------------------------------------------------------------------
+
 class MatchScorer:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -78,39 +172,50 @@ class MatchScorer:
         self.availability_repo = AvailabilityRepository(session)
 
     async def score(self, doctor_id: uuid.UUID, shift: Shift) -> ScoredDoctor:
+        """Compatibility wrapper — builds a single-shift context and delegates."""
         doctor = await self.doctor_repo.get_with_relations(doctor_id)
         if not doctor:
             return ScoredDoctor(doctor_id=doctor_id)
 
+        ctx = await DoctorShiftsScoringContextBuilder(self.session).build(
+            doctor=doctor, shifts=[shift],
+        )
+        return self.score_with_context(shift, ctx)
+
+    def score_with_context(
+        self, shift: Shift, ctx: DoctorShiftsScoringContext
+    ) -> ScoredDoctor:
+        """Synchronous scoring — zero DB calls."""
+        doctor = ctx.doctor
         breakdown = ScoreBreakdown()
 
         # 1. Availability type (max 20)
-        breakdown.availability = await self._score_availability(doctor_id, shift)
+        breakdown.availability = self._ctx_score_availability(shift, ctx)
 
         # 2. Shift preference (max 10)
-        breakdown.shift_preference = self._score_shift_preference(doctor, shift)
+        breakdown.shift_preference = self._ctx_score_shift_preference(doctor, shift)
 
         # 3. Site affinity (max 15)
-        breakdown.site_affinity = await self._score_site_affinity(doctor_id, shift)
+        breakdown.site_affinity = self._ctx_score_site_affinity(shift, ctx)
 
         # 4. Workload balance (max 10)
-        breakdown.workload_balance = await self._score_workload(doctor, shift)
+        breakdown.workload_balance = self._ctx_score_workload(doctor, shift, ctx)
 
         # 5. Distance (max 10)
-        dist_score, dist_km = self._score_distance(doctor, shift)
+        dist_score, dist_km = self._ctx_score_distance(doctor, shift)
         breakdown.distance = dist_score
 
         # 6. Extra qualifications (max 5)
-        breakdown.extra_qualifications = self._score_extra_qualifications(doctor, shift)
+        breakdown.extra_qualifications = self._ctx_score_extra_qualifications(doctor, shift)
 
         # 7. Reliability (max 15)
-        breakdown.reliability = await self._score_reliability(doctor_id)
+        breakdown.reliability = self._ctx_score_reliability(ctx)
 
         # 8. Fairness (max 10)
-        breakdown.fairness = await self._score_fairness(doctor, shift)
+        breakdown.fairness = self._ctx_score_fairness(doctor, shift, ctx)
 
         # 9. Cost efficiency (max 5)
-        breakdown.cost_efficiency = self._score_cost_efficiency(doctor, shift)
+        breakdown.cost_efficiency = self._ctx_score_cost_efficiency(doctor, shift)
 
         # Build competency info
         certs = [
@@ -123,7 +228,7 @@ class MatchScorer:
         ]
 
         return ScoredDoctor(
-            doctor_id=doctor_id,
+            doctor_id=doctor.id,
             score=breakdown.total,
             breakdown=breakdown,
             distance_km=dist_km,
@@ -137,30 +242,87 @@ class MatchScorer:
     async def score_many(
         self, doctor_ids: list[uuid.UUID], shift: Shift
     ) -> list[ScoredDoctor]:
+        """Compatibility wrapper — scores each doctor individually."""
         results = []
         for did in doctor_ids:
             results.append(await self.score(did, shift))
         results.sort(key=lambda s: s.score, reverse=True)
         return results
 
-    # --- Scoring dimensions ---
+    async def score_many_with_eligibility_context(
+        self,
+        doctor_ids: list[uuid.UUID],
+        shift: Shift,
+        eligibility_ctx: "EligibilityContext",
+    ) -> list[ScoredDoctor]:
+        """Score N doctors for 1 shift, reusing data from EligibilityContext.
 
-    async def _score_availability(self, doctor_id: uuid.UUID, shift: Shift) -> int:
-        """Max 20 points."""
-        avail = await self.availability_repo.get_availability_with_type(
-            doctor_id, shift.date, shift.start_datetime.time(), shift.end_datetime.time()
+        Fires only 2 NEW queries (bulk site affinity + bulk reliability).
+        Availability types are extracted from the eligibility snapshot — safe because
+        only eligible doctors (not blocked by unavailability) reach this path.
+        """
+        from app.rules.eligibility import EligibilityContext  # type hint only
+
+        if not doctor_ids:
+            return []
+
+        # Q1 — bulk site affinity for all doctors (1 query)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        since_90d = now - timedelta(days=90)
+        site_affinity = await self.shift_repo.bulk_get_recent_site_affinity_for_doctors(
+            doctor_ids, since_90d
         )
-        if not avail:
+
+        # Q2 — bulk reliability scores (1 query)
+        reliability_repo = ReliabilityRepository(self.session)
+        reliability = await reliability_repo.bulk_get_reliability_scores(doctor_ids)
+
+        # Build per-doctor scoring context from pre-loaded data (pure Python)
+        results: list[ScoredDoctor] = []
+        for did in doctor_ids:
+            doctor = eligibility_ctx.doctors.get(did)
+            if not doctor:
+                results.append(ScoredDoctor(doctor_id=did))
+                continue
+
+            snap = eligibility_ctx.availability_snapshot_by_doctor.get(did)
+            avail_type = snap.availability_type if snap else None
+
+            site_ids, inst_ids = site_affinity.get(did, (set(), set()))
+
+            ctx = DoctorShiftsScoringContext(
+                doctor=doctor,
+                availability_type_by_shift_id={shift.id: avail_type},
+                monthly_shift_count_by_month={
+                    (shift.date.year, shift.date.month): (
+                        eligibility_ctx.monthly_shift_count_by_doctor.get(did, 0)
+                    )
+                },
+                recent_site_ids_90d=site_ids,
+                recent_institution_ids_90d=inst_ids,
+                reliability_score=reliability.get(did),
+            )
+            results.append(self.score_with_context(shift, ctx))
+
+        results.sort(key=lambda s: s.score, reverse=True)
+        return results
+
+    # --- Sync scoring dimensions (ctx_ prefix) ---
+
+    def _ctx_score_availability(self, shift: Shift, ctx: DoctorShiftsScoringContext) -> int:
+        """Max 20 points. Uses raw availability type (no unavailability filter)."""
+        avail_type = ctx.availability_type_by_shift_id.get(shift.id)
+        if avail_type is None:
             return 0
-        if avail.availability_type == AvailabilityType.PREFERRED:
+        if avail_type == AvailabilityType.PREFERRED:
             return 20
-        if avail.availability_type == AvailabilityType.AVAILABLE:
+        if avail_type == AvailabilityType.AVAILABLE:
             return 12
-        if avail.availability_type == AvailabilityType.RELUCTANT:
+        if avail_type == AvailabilityType.RELUCTANT:
             return 4
         return 0
 
-    def _score_shift_preference(self, doctor, shift: Shift) -> int:
+    def _ctx_score_shift_preference(self, doctor: Doctor, shift: Shift) -> int:
         """Max 10 points."""
         prefs = doctor.preferences
         if not prefs:
@@ -179,53 +341,27 @@ class MatchScorer:
             return 1
         return 5
 
-    async def _score_site_affinity(self, doctor_id: uuid.UUID, shift: Shift) -> int:
+    def _ctx_score_site_affinity(self, shift: Shift, ctx: DoctorShiftsScoringContext) -> int:
         """Max 15 points."""
-        now = datetime.utcnow()
-        start_90d = now - timedelta(days=90)
-        recent_shifts = await self.shift_repo.get_doctor_shifts(
-            doctor_id, start=start_90d, end=now
-        )
-
-        if not recent_shifts:
+        if not ctx.recent_site_ids_90d:
             return 3
 
-        target_site_id = shift.site_id
-        recent_site_ids = {s.site_id for s in recent_shifts}
-
-        if target_site_id in recent_site_ids:
+        if shift.site_id in ctx.recent_site_ids_90d:
             return 15
 
         target_site = shift.site
-        if target_site:
-            target_inst_id = target_site.institution_id
-            result = await self.session.execute(
-                select(InstitutionSite.institution_id).where(
-                    InstitutionSite.id.in_(recent_site_ids)
-                )
-            )
-            recent_inst_ids = {row[0] for row in result.all()}
-            if target_inst_id in recent_inst_ids:
-                return 10
+        if target_site and target_site.institution_id in ctx.recent_institution_ids_90d:
+            return 10
 
-            doctor = await self.doctor_repo.get_with_relations(doctor_id)
-            if doctor and doctor.preferences and doctor.preferences.preferred_institution_types:
-                pref_types = {
-                    t.strip().lower()
-                    for t in doctor.preferences.preferred_institution_types.split(",")
-                    if t.strip()
-                }
-                inst = await self.session.get(Institution, target_inst_id)
-                if inst and inst.institution_type:
-                    if inst.institution_type.lower() in pref_types:
-                        return 6
-
+        # institution_type branch removed — field does not exist on Institution model
         return 3
 
-    async def _score_workload(self, doctor, shift: Shift) -> int:
+    def _ctx_score_workload(
+        self, doctor: Doctor, shift: Shift, ctx: DoctorShiftsScoringContext
+    ) -> int:
         """Max 10 points."""
-        count = await self.assignment_repo.count_shifts_in_month(
-            doctor.id, shift.date.year, shift.date.month
+        count = ctx.monthly_shift_count_by_month.get(
+            (shift.date.year, shift.date.month), 0
         )
         max_shifts = doctor.max_shifts_per_month or 20
         if max_shifts == 0:
@@ -241,7 +377,7 @@ class MatchScorer:
             return 2
         return 0
 
-    def _score_distance(self, doctor, shift: Shift) -> tuple[int, float | None]:
+    def _ctx_score_distance(self, doctor: Doctor, shift: Shift) -> tuple[int, float | None]:
         """Max 10 points."""
         if doctor.lat is None or doctor.lon is None:
             return 5, None
@@ -259,7 +395,7 @@ class MatchScorer:
             score = 2
         return score, round(dist, 1)
 
-    def _score_extra_qualifications(self, doctor, shift: Shift) -> int:
+    def _ctx_score_extra_qualifications(self, doctor: Doctor, shift: Shift) -> int:
         """Max 5 points."""
         points = 0
 
@@ -281,26 +417,19 @@ class MatchScorer:
 
         return min(points, 5)
 
-    async def _score_reliability(self, doctor_id: uuid.UUID) -> int:
+    def _ctx_score_reliability(self, ctx: DoctorShiftsScoringContext) -> int:
         """Max 15 points. Based on historical offer response behavior."""
-        stmt = select(DoctorReliabilityStats).where(
-            DoctorReliabilityStats.doctor_id == doctor_id
-        )
-        result = await self.session.execute(stmt)
-        stats = result.scalar_one_or_none()
-
-        if not stats or stats.total_offers_received == 0:
+        if ctx.reliability_score is None:
             return 8  # Neutral for new doctors
+        return round(ctx.reliability_score / 100 * 15)
 
-        # Scale reliability_score (0-100) to 0-15
-        return round(stats.reliability_score / 100 * 15)
-
-    async def _score_fairness(self, doctor, shift: Shift) -> int:
+    def _ctx_score_fairness(
+        self, doctor: Doctor, shift: Shift, ctx: DoctorShiftsScoringContext
+    ) -> int:
         """Max 10 points. Favor doctors who have fewer recent assignments."""
-        count = await self.assignment_repo.count_shifts_in_month(
-            doctor.id, shift.date.year, shift.date.month
+        count = ctx.monthly_shift_count_by_month.get(
+            (shift.date.year, shift.date.month), 0
         )
-        # Fewer assignments = higher score
         if count == 0:
             return 10
         if count <= 3:
@@ -311,10 +440,9 @@ class MatchScorer:
             return 3
         return 1
 
-    def _score_cost_efficiency(self, doctor, shift: Shift) -> int:
+    def _ctx_score_cost_efficiency(self, doctor: Doctor, shift: Shift) -> int:
         """Max 5 points. Favor closer, less expensive doctors."""
         points = 0
-        # Closer doctor = less travel cost
         if doctor.lat is not None and doctor.lon is not None:
             site = shift.site
             if site and site.lat is not None and site.lon is not None:
@@ -326,11 +454,9 @@ class MatchScorer:
                 else:
                     points += 1
 
-        # No overnight stay needed = cost saving
         if not doctor.willing_overnight_stay:
             points += 1
 
-        # Has own vehicle = no transport cost
         if doctor.has_own_vehicle:
             points += 1
 

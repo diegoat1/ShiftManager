@@ -1,5 +1,7 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from app.utils.dates import utcnow_naive
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,8 +36,8 @@ class OfferService:
             shift_id=shift_id,
             doctor_id=doctor_id,
             status=OfferStatus.PROPOSED,
-            offered_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(hours=expires_in_hours),
+            offered_at=utcnow_naive(),
+            expires_at=utcnow_naive() + timedelta(hours=expires_in_hours),
             rank_snapshot=rank,
             score_snapshot=score,
             proposed_by=proposed_by,
@@ -60,7 +62,7 @@ class OfferService:
         if not doctor_ids:
             return []
 
-        now = datetime.utcnow()
+        now = utcnow_naive()
         expires_at = now + timedelta(hours=expires_in_hours)
 
         # One query: find doctors that already have an offer for this shift
@@ -102,7 +104,7 @@ class OfferService:
             raise ValueError(f"Cannot accept offer in status {offer.status}")
 
         offer.status = OfferStatus.ACCEPTED
-        offer.responded_at = datetime.utcnow()
+        offer.responded_at = utcnow_naive()
         await self.session.flush()
 
         # Auto-create assignment — must succeed or we roll back the offer status change
@@ -123,7 +125,7 @@ class OfferService:
             raise ValueError(f"Cannot reject offer in status {offer.status}")
 
         offer.status = OfferStatus.REJECTED
-        offer.responded_at = datetime.utcnow()
+        offer.responded_at = utcnow_naive()
         offer.response_note = response_note
         await self.session.flush()
         return offer

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from app.utils.dates import utcnow_naive
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,7 +66,7 @@ class ReliabilityService:
             stats.avg_response_time_minutes = round(avg_response, 1)
             stats.acceptance_rate = round(acceptance_rate, 1)
             stats.reliability_score = round(score, 1)
-            stats.last_calculated_at = datetime.utcnow()
+            stats.last_calculated_at = utcnow_naive()
             await self.session.flush()
         else:
             stats = DoctorReliabilityStats(
@@ -79,7 +79,7 @@ class ReliabilityService:
                 avg_response_time_minutes=round(avg_response, 1),
                 acceptance_rate=round(acceptance_rate, 1),
                 reliability_score=round(score, 1),
-                last_calculated_at=datetime.utcnow(),
+                last_calculated_at=utcnow_naive(),
             )
             self.session.add(stats)
             await self.session.flush()

@@ -61,7 +61,7 @@ async def test_create_template_and_generate(client, admin_headers):
 @pytest.mark.asyncio
 async def test_shift_inherits_institution_requirements(client, admin_headers):
     # Create lookup
-    ct = await client.post("/api/v1/lookups/certification-types", json={"name": "BLS"})
+    ct = await client.post("/api/v1/lookups/certification-types", json={"name": "BLS"}, headers=admin_headers)
     ct_id = ct.json()["id"]
 
     # Create institution with requirement

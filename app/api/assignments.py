@@ -33,7 +33,10 @@ async def check_eligibility(doctor_id: uuid.UUID, shift_id: uuid.UUID, svc: Assi
 
 @router.get("/eligible/{shift_id}", response_model=list[ScoredEligibleDoctorRead])
 async def get_eligible_doctors(shift_id: uuid.UUID, svc: AssignSvc):
-    return await svc.get_eligible_doctors(shift_id)
+    try:
+        return await svc.get_eligible_doctors(shift_id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
 
 
 @router.get("/shift/{shift_id}", response_model=list[AssignmentRead])

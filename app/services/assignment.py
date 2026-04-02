@@ -4,10 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.assignment import ShiftAssignment
 from app.repositories.assignment import AssignmentRepository
-from app.repositories.doctor import DoctorRepository
 from app.repositories.shift import ShiftRepository
-from app.rules.eligibility import EligibilityEngine
-from app.rules.scoring import MatchScorer
+from app.rules.eligibility import DoctorShiftsContextBuilder, EligibilityContextBuilder, EligibilityEngine
+from app.rules.scoring import DoctorShiftsScoringContextBuilder, MatchScorer
 from app.schemas.assignment import AssignmentCreate, EligibilityResult
 from app.utils.enums import AssignmentStatus, ShiftStatus
 
@@ -17,7 +16,6 @@ class AssignmentService:
         self.session = session
         self.repo = AssignmentRepository(session)
         self.shift_repo = ShiftRepository(session)
-        self.doctor_repo = DoctorRepository(session)
         self.engine = EligibilityEngine(session)
         self.scorer = MatchScorer(session)
 
@@ -77,13 +75,14 @@ class AssignmentService:
         return EligibilityResult(is_eligible=is_eligible, reasons=reasons, warnings=warnings)
 
     async def get_eligible_doctors(self, shift_id: uuid.UUID) -> list[dict]:
-        doctors = await self.doctor_repo.get_all(limit=1000, is_active=True)
-        shift = await self.shift_repo.get_with_requirements(shift_id)
+        # Build bulk context — raises ValueError if shift not found
+        ctx = await EligibilityContextBuilder(self.session).build_for_shift(shift_id, limit=1000)
+        shift = ctx.shift  # already loaded with requirements
 
         eligible_ids = []
         all_results = []
-        for doctor in doctors:
-            is_eligible, reasons, warnings = await self.engine.check(doctor.id, shift_id)
+        for doctor_id, doctor in ctx.doctors.items():
+            is_eligible, reasons, warnings = self.engine.check_with_context(doctor_id, ctx)
             all_results.append({
                 "doctor": doctor,
                 "is_eligible": is_eligible,
@@ -92,12 +91,14 @@ class AssignmentService:
                 ),
             })
             if is_eligible:
-                eligible_ids.append(doctor.id)
+                eligible_ids.append(doctor_id)
 
-        # Score eligible doctors
+        # Score eligible doctors — 2 bulk queries (site affinity + reliability)
         scored_map: dict = {}
-        if shift and eligible_ids:
-            scored_list = await self.scorer.score_many(eligible_ids, shift)
+        if eligible_ids:
+            scored_list = await self.scorer.score_many_with_eligibility_context(
+                eligible_ids, shift, ctx
+            )
             scored_map = {s.doctor_id: s for s in scored_list}
 
         # Build response: eligible first (sorted by score desc), then ineligible
@@ -225,21 +226,41 @@ class AssignmentService:
         result = await self.session.execute(stmt)
         shifts = result.scalars().unique().all()
 
-        # Post-query filter by institution_type
-        if institution_type:
-            shifts = [
-                s for s in shifts
-                if s.site and s.site.institution
-                and s.site.institution.institution_type == institution_type
-            ]
+        # institution_type field not yet on the model — filter is a no-op for now
+        _ = institution_type
 
         offer_repo = OfferRepository(self.session)
+        shift_ids = [s.id for s in shifts]
+        applied_shift_ids = await self.repo.get_shift_ids_for_doctor(doctor_id, shift_ids)
+        pending_offer_shift_ids = await offer_repo.get_pending_offer_shift_ids_for_doctor(doctor_id, shift_ids)
+
+        # Bulk eligibility: ≤ 9+2M queries for all N shifts (6b)
+        shifts_list = list(shifts)
+        if not shifts_list:
+            return []
+        ctx_by_shift = await DoctorShiftsContextBuilder(self.session).build(doctor_id, shifts_list)
+
+        # Extract shared data from eligibility context for scoring (6c1)
+        first_ctx = ctx_by_shift[shifts_list[0].id]
+        doctor = first_ctx.doctors[doctor_id]
+        monthly_counts: dict[tuple[int, int], int] = {}
+        for ctx in ctx_by_shift.values():
+            key = (ctx.shift.date.year, ctx.shift.date.month)
+            if key not in monthly_counts:
+                monthly_counts[key] = ctx.monthly_shift_count_by_doctor.get(doctor_id, 0)
+
+        # Bulk scoring: 3 NEW queries (avail types, site affinity, reliability)
+        scoring_ctx = await DoctorShiftsScoringContextBuilder(self.session).build(
+            doctor=doctor,
+            shifts=shifts_list,
+            monthly_shift_count_by_month=monthly_counts,
+        )
+
         out = []
-        for shift in shifts:
-            is_eligible, reasons, warnings = await self.engine.check(doctor_id, shift.id)
-            scored = await self.scorer.score(doctor_id, shift)
-            existing_assignment = await self.repo.get_existing(shift.id, doctor_id)
-            existing_offer = await offer_repo.get_existing(shift.id, doctor_id)
+        for shift in shifts_list:
+            ctx = ctx_by_shift[shift.id]
+            is_eligible, reasons, warnings = self.engine.check_with_context(doctor_id, ctx)
+            scored = self.scorer.score_with_context(shift, scoring_ctx)
 
             site = shift.site
             institution = site.institution if site else None
@@ -261,17 +282,14 @@ class AssignmentService:
                 "site_name": site.name if site else None,
                 "site_city": site.city if site else None,
                 "institution_name": institution.name if institution else None,
-                "institution_type": institution.institution_type if institution else None,
+                "institution_type": None,
                 "eligibility": EligibilityResult(
                     is_eligible=is_eligible, reasons=reasons, warnings=warnings,
                 ),
                 "score": scored.score,
                 "score_breakdown": scored.breakdown.to_dict() if scored and scored.breakdown else None,
-                "already_applied": existing_assignment is not None,
-                "has_pending_offer": (
-                    existing_offer is not None
-                    and existing_offer.status in ('proposed', 'viewed')
-                ),
+                "already_applied": shift.id in applied_shift_ids,
+                "has_pending_offer": shift.id in pending_offer_shift_ids,
             })
         return out
 

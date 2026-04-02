@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from typing import Sequence
 
 from sqlalchemy import and_, case, func, or_, select, update
@@ -8,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.doctor import Doctor
 from app.models.message import Message
+from app.utils.dates import utcnow_naive
 from app.models.user import User
 
 
@@ -64,7 +64,7 @@ class MessageRepository:
                 Message.recipient_id == user_id,
                 Message.read_at == None,
             )
-            .values(read_at=datetime.utcnow())
+            .values(read_at=utcnow_naive())
         )
         return result.rowcount
 

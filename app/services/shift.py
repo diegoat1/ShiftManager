@@ -18,28 +18,7 @@ class ShiftService:
 
     async def create(self, data: ShiftCreate) -> Shift:
         shift = await self.repo.create(**data.model_dump())
-
-        # Copy institution requirements to shift
-        site = await self.inst_repo.get_site(data.site_id)
-        if site:
-            inst_reqs = await self.inst_repo.get_requirements(site.institution_id)
-            for req in inst_reqs:
-                await self.repo.add_requirement(
-                    shift.id,
-                    certification_type_id=req.certification_type_id,
-                    is_mandatory=req.is_mandatory,
-                )
-            lang_reqs = await self.inst_repo.get_language_requirements(site.institution_id)
-            for req in lang_reqs:
-                await self.repo.add_language_requirement(
-                    shift.id,
-                    language_id=req.language_id,
-                    min_proficiency=req.min_proficiency,
-                )
-            # Inherit operational fields from site if not explicitly set on shift
-            self._inherit_site_fields(shift, site)
-
-
+        await self._copy_institution_requirements(shift, data.site_id)
         return await self.repo.get_with_requirements(shift.id)
 
     async def get(self, shift_id: uuid.UUID) -> Shift | None:
@@ -79,6 +58,27 @@ class ShiftService:
         )
 
         return req
+
+    async def _copy_institution_requirements(self, shift: Shift, site_id: uuid.UUID) -> None:
+        """Copy certification/language requirements and operational fields from institution site."""
+        site = await self.inst_repo.get_site(site_id)
+        if not site:
+            return
+        inst_reqs = await self.inst_repo.get_requirements(site.institution_id)
+        for req in inst_reqs:
+            await self.repo.add_requirement(
+                shift.id,
+                certification_type_id=req.certification_type_id,
+                is_mandatory=req.is_mandatory,
+            )
+        lang_reqs = await self.inst_repo.get_language_requirements(site.institution_id)
+        for req in lang_reqs:
+            await self.repo.add_language_requirement(
+                shift.id,
+                language_id=req.language_id,
+                min_proficiency=req.min_proficiency,
+            )
+        self._inherit_site_fields(shift, site)
 
     @staticmethod
     def _inherit_site_fields(shift: Shift, site) -> None:
@@ -140,23 +140,7 @@ class ShiftService:
                     status=ShiftStatus.OPEN,
                 )
 
-                # Copy institution requirements
-                site = await self.inst_repo.get_site(data.site_id)
-                if site:
-                    inst_reqs = await self.inst_repo.get_requirements(site.institution_id)
-                    for req in inst_reqs:
-                        await self.repo.add_requirement(
-                            shift.id,
-                            certification_type_id=req.certification_type_id,
-                            is_mandatory=req.is_mandatory,
-                        )
-                    lang_reqs = await self.inst_repo.get_language_requirements(site.institution_id)
-                    for req in lang_reqs:
-                        await self.repo.add_language_requirement(
-                            shift.id, language_id=req.language_id, min_proficiency=req.min_proficiency
-                        )
-                    # Inherit operational fields from site
-                    self._inherit_site_fields(shift, site)
+                await self._copy_institution_requirements(shift, data.site_id)
 
                 created.append(shift)
             current += timedelta(days=1)
