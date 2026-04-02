@@ -43,7 +43,7 @@ document.addEventListener('alpine:init', () => {
         instModalOpen: false,
         instSaving: false,
         instError: '',
-        newInst: { name: '', tax_code: '', address: '', city: '', province: '', cooperative_id: '' },
+        newInst: { name: '', tax_code: '', address: '', city: '', province: '' },
 
         // Template state
         siteTemplates: {},
@@ -365,7 +365,7 @@ document.addEventListener('alpine:init', () => {
         // --- Institutions (create from structure modal) ---
 
         openInstModal() {
-            this.newInst = { name: '', tax_code: '', address: '', city: '', province: '', cooperative_id: '' };
+            this.newInst = { name: '', tax_code: '', address: '', city: '', province: '' };
             this.instError = '';
             this.instModalOpen = true;
         },
@@ -381,7 +381,6 @@ document.addEventListener('alpine:init', () => {
                     address: this.newInst.address || null,
                     city: this.newInst.city || null,
                     province: this.newInst.province || null,
-                    cooperative_id: this.newInst.cooperative_id || null,
                 });
                 this.instModalOpen = false;
                 await this.load();

@@ -1,5 +1,6 @@
 from app.models.user import User
 from app.models.doctor import Doctor, DoctorCertification, DoctorLanguage, DoctorPreference, CertificationType, Language
+from app.models.cooperative import CooperativeSiteAssignment
 from app.models.institution import Institution, InstitutionSite
 from app.models.requirement import CodeLevel, InstitutionRequirement, InstitutionLanguageRequirement
 from app.models.shift import ShiftTemplate, Shift, ShiftRequirement, ShiftLanguageRequirement
@@ -15,7 +16,7 @@ from app.models.message import Message
 __all__ = [
     "User",
     "Doctor", "DoctorCertification", "DoctorLanguage", "DoctorPreference", "CertificationType", "Language",
-    "Institution", "InstitutionSite",
+    "Institution", "InstitutionSite", "CooperativeSiteAssignment",
     "CodeLevel", "InstitutionRequirement", "InstitutionLanguageRequirement",
     "ShiftTemplate", "Shift", "ShiftRequirement", "ShiftLanguageRequirement",
     "DoctorAvailability", "DoctorUnavailability",

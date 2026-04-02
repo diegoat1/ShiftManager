@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import RequireAdmin, get_institution_service
+from app.api.deps import RequireAdmin, get_cooperative_assignment_service, get_institution_service
 from app.schemas.common import PaginatedResponse
 from app.schemas.institution import (
     InstitutionCreate,
@@ -17,11 +17,14 @@ from app.schemas.institution import (
     SiteRead,
     SiteUpdate,
 )
+from app.schemas.cooperative import SiteAssignmentRead
+from app.services.cooperative_assignment import CooperativeSiteAssignmentService
 from app.services.institution import InstitutionService
 
 router = APIRouter(prefix="/institutions", tags=["institutions"])
 
 InstSvc = Annotated[InstitutionService, Depends(get_institution_service)]
+AssignmentSvc = Annotated[CooperativeSiteAssignmentService, Depends(get_cooperative_assignment_service)]
 
 
 @router.post("/", response_model=InstitutionRead, status_code=201)
@@ -101,3 +104,8 @@ async def add_language_requirement(institution_id: uuid.UUID, data: LanguageRequ
 @router.get("/{institution_id}/language-requirements", response_model=list[LanguageRequirementRead])
 async def list_language_requirements(institution_id: uuid.UUID, svc: InstSvc):
     return await svc.get_language_requirements(institution_id)
+
+
+@router.get("/sites/{site_id}/cooperative", response_model=SiteAssignmentRead | None)
+async def get_active_cooperative_for_site(site_id: uuid.UUID, svc: AssignmentSvc):
+    return await svc.get_active_for_site(site_id)

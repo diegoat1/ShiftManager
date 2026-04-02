@@ -838,7 +838,7 @@
                                         <div class="flex items-center gap-3 mt-1 text-sm text-slate-500">
                                             <span class="badge badge-blue" x-text="typeLabel(inst.institution_type)"></span>
                                             <span x-show="inst.city" x-text="inst.city + (inst.province ? ' (' + inst.province + ')' : '')"></span>
-                                            <span x-show="inst.cooperative_id" class="badge badge-teal" x-text="'Coop: ' + (cooperatives.find(c => c.id === inst.cooperative_id)?.name || '...')"></span>
+                                            <!-- Cooperative info now lives at site level via cooperative_site_assignments -->
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-3">
@@ -1191,18 +1191,7 @@
                                         <div><label class="block text-xs font-medium text-slate-600 mb-1">Prov.</label>
                                             <input type="text" x-model="newInst.province" maxlength="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
                                     </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">Cooperativa (ente pagante)</label>
-                                        <div class="flex gap-2">
-                                            <select x-model="newInst.cooperative_id" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                                                <option value="">-- Nessuna cooperativa --</option>
-                                                <template x-for="c in cooperatives" :key="c.id">
-                                                    <option :value="c.id" x-text="c.name + (c.partita_iva ? ' (P.IVA: ' + c.partita_iva + ')' : '')"></option>
-                                                </template>
-                                            </select>
-                                            <button type="button" @click="openCoopModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">+ Nuova</button>
-                                        </div>
-                                    </div>
+                                    <!-- Cooperative linking moved to site-level (cooperative_site_assignments) -->
                                     <div x-show="instError" class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2" x-text="instError"></div>
                                     <div class="flex justify-end gap-3 pt-2">
                                         <button @click="instModalOpen = false" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">Annulla</button>

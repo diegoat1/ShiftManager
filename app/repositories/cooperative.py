@@ -1,9 +1,10 @@
 import uuid
+from datetime import date
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.cooperative import Cooperative
+from app.models.cooperative import Cooperative, CooperativeSiteAssignment
 from app.repositories.base import BaseRepository
 from app.schemas.cooperative import CooperativeCreate, CooperativeUpdate
 
@@ -64,3 +65,67 @@ class CooperativeRepository(BaseRepository[Cooperative]):
     async def delete(self, coop: Cooperative) -> None:
         await self.session.delete(coop)
         await self.session.flush()
+
+    # --- Site assignments ---
+
+    async def create_assignment(self, **kwargs) -> CooperativeSiteAssignment:
+        assignment = CooperativeSiteAssignment(**kwargs)
+        self.session.add(assignment)
+        await self.session.flush()
+        await self.session.refresh(assignment)
+        return assignment
+
+    async def get_assignment(self, assignment_id: uuid.UUID) -> CooperativeSiteAssignment | None:
+        return await self.session.get(CooperativeSiteAssignment, assignment_id)
+
+    async def get_active_for_site(self, site_id: uuid.UUID) -> CooperativeSiteAssignment | None:
+        """Return the current (ongoing) assignment for a site, or None."""
+        result = await self.session.execute(
+            select(CooperativeSiteAssignment).where(
+                CooperativeSiteAssignment.site_id == site_id,
+                CooperativeSiteAssignment.end_date.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_assignments_for_cooperative(
+        self, cooperative_id: uuid.UUID, active_only: bool = True
+    ) -> list[CooperativeSiteAssignment]:
+        stmt = select(CooperativeSiteAssignment).where(
+            CooperativeSiteAssignment.cooperative_id == cooperative_id
+        )
+        if active_only:
+            stmt = stmt.where(CooperativeSiteAssignment.end_date.is_(None))
+        stmt = stmt.order_by(CooperativeSiteAssignment.start_date.desc())
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_history_for_site(self, site_id: uuid.UUID) -> list[CooperativeSiteAssignment]:
+        result = await self.session.execute(
+            select(CooperativeSiteAssignment)
+            .where(CooperativeSiteAssignment.site_id == site_id)
+            .order_by(CooperativeSiteAssignment.start_date.desc())
+        )
+        return list(result.scalars().all())
+
+    async def check_overlap(
+        self,
+        site_id: uuid.UUID,
+        start_date: date,
+        end_date: date | None,
+        exclude_id: uuid.UUID | None = None,
+    ) -> CooperativeSiteAssignment | None:
+        """Return the first overlapping assignment, or None."""
+        effective_end = end_date if end_date is not None else date(9999, 12, 31)
+        stmt = select(CooperativeSiteAssignment).where(
+            CooperativeSiteAssignment.site_id == site_id,
+            CooperativeSiteAssignment.start_date <= effective_end,
+            or_(
+                CooperativeSiteAssignment.end_date.is_(None),
+                CooperativeSiteAssignment.end_date >= start_date,
+            ),
+        )
+        if exclude_id:
+            stmt = stmt.where(CooperativeSiteAssignment.id != exclude_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()

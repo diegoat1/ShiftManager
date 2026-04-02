@@ -17,6 +17,7 @@ from app.services.assignment import AssignmentService
 from app.services.audit import AuditService
 from app.services.auth import AuthService
 from app.services.availability import AvailabilityService
+from app.services.cooperative_assignment import CooperativeSiteAssignmentService
 from app.services.doctor import DoctorService
 from app.services.document import DocumentService
 from app.services.institution import InstitutionService
@@ -163,3 +164,7 @@ async def get_analytics_service(session: DbSession) -> AnalyticsService:
 
 async def get_message_service(session: DbSession) -> MessageService:
     return MessageService(session)
+
+
+async def get_cooperative_assignment_service(session: DbSession) -> CooperativeSiteAssignmentService:
+    return CooperativeSiteAssignmentService(session)
